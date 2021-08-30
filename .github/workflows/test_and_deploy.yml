@@ -64,11 +64,11 @@ jobs:
         run: |
           sudo conda init bash
           sudo conda create -n myenv python=${{ matrix.python-version }}
-          $CONDA/bin/activate myenv
-          conda install -c conda-forge fftw
-          $CONDA/bin/python -m pip install --upgrade pip
-          $CONDA/bin/pip install setuptools tox numpy scipy cython tox-gh-actions 
-          $CONDA/bin/python setup.py build_ext --inplace  
+          sudo $CONDA/bin/activate myenv
+          sudo conda install -c conda-forge fftw
+          sudo $CONDA/bin/python -m pip install --upgrade pip
+          sudo $CONDA/bin/pip install setuptools tox numpy scipy cython tox-gh-actions 
+          sudo $CONDA/bin/python setup.py build_ext --inplace  
       - name: Install dependencies Linux
         if: runner.os == 'Linux' 
         run: |
