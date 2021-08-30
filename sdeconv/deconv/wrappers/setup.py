@@ -53,7 +53,8 @@ def configuration(parent_package='', top_path=None):
 
     config.add_extension('_psfs',
                          sources=['_psfs.pyx', 
-                                  'sgibsonlannipsf.cpp', 'sgaussianpsf.cpp', 'SObserverConsole.cpp'],
+                                  'sgibsonlannipsf.cpp', 'sgaussianpsf.cpp', 
+                                  'SObserver.cpp', 'SObserverConsole.cpp'],
                          include_dirs=[numpy.get_include()],
                          libraries=['fftw3f'] + libraries,
                          language='c++',
