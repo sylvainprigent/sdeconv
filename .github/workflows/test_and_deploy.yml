@@ -56,6 +56,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install setuptools tox numpy scipy cython tox-gh-actions
       # this runs the platform-specific tests declared in tox.ini
+      - name: Build cython
+        run : |
+          python3 setup.py build_ext --inplace
       - name: Test with tox
         run: tox
         env:
