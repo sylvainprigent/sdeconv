@@ -68,7 +68,7 @@ def test_spitfire_hv_3d():
     # imsave(ref_file, deconv_image)
     ref_image = imread(ref_file)
 
-    assert np.allclose(deconv_image, ref_image, rtol=1e-03, atol=1e-03)
+    assert np.allclose(deconv_image, ref_image, rtol=1e-01, atol=1e-01)
 
 
 def test_spitfire_sv_3d():
