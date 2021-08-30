@@ -72,7 +72,7 @@ jobs:
         run: |
           conda init bash
           conda create -n myenv python=${{ matrix.python-version }}
-          conda activate myenv
+          $CONDA/bin/activate myenv
           conda install -c conda-forge fftw
           echo $CONDA
           PATH=$PATH:$CONDA/bin/
