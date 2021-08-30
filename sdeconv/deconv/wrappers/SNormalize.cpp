@@ -51,7 +51,7 @@ void normalize(float* image, unsigned int sx, unsigned int sy, unsigned int sz, 
 void normMinMax(float* image, unsigned int sx, unsigned int sy, unsigned int sz, unsigned int st, unsigned int sc, float* output)
 {
     // calculate min and max
-    unsigned long bs = sx*sy*sz*st*sc;
+    int bs = sx*sy*sz*st*sc;
     float max = image[0];
     float min = image[0];
     for (unsigned int i = 1 ; i < bs ; i++){
@@ -67,7 +67,7 @@ void normMinMax(float* image, unsigned int sx, unsigned int sy, unsigned int sz,
     // normalize
     //output = new float[bs];
 #pragma omp parallel for
-    for (unsigned int i = 0 ; i < bs ; i++){
+    for (int i = 0 ; i < bs ; i++){
         output[i] = (image[i]-min) * invMaxMenusMin;
     }
 }
@@ -75,7 +75,7 @@ void normMinMax(float* image, unsigned int sx, unsigned int sy, unsigned int sz,
 void normSum(float* image, unsigned int sx, unsigned int sy, unsigned int sz, unsigned int st, unsigned int sc, float* output)
 {
     // calculate sum
-    unsigned long bs = sx*sy*sz*st*sc;
+    int bs = sx*sy*sz*st*sc;
     float sum = 0.0;
     for (unsigned int i = 0 ; i < bs ; i++){
         sum += image[i];
@@ -84,7 +84,7 @@ void normSum(float* image, unsigned int sx, unsigned int sy, unsigned int sz, un
     // normalize
     //output = new float[bs];
 #pragma omp parallel for
-    for (unsigned int i = 0 ; i < bs ; i++){
+    for (int i = 0 ; i < bs ; i++){
         output[i] = (image[i]) / sum;
     }
 }
@@ -92,9 +92,9 @@ void normSum(float* image, unsigned int sx, unsigned int sy, unsigned int sz, un
 void normL2(float* image, unsigned int sx, unsigned int sy, unsigned int sz, unsigned int st, unsigned int sc, float* output)
 {
     // calculate normL2
-    unsigned long bs = sx*sy*sz*st*sc;
+    int bs = sx*sy*sz*st*sc;
     float norm = 0.0;
-    for (unsigned int i = 0 ; i < bs ; i++){
+    for (int i = 0 ; i < bs ; i++){
         norm += image[i]*image[i];
     }
     norm = sqrt(norm);
@@ -102,7 +102,7 @@ void normL2(float* image, unsigned int sx, unsigned int sy, unsigned int sz, uns
     // normalize
     //output = new float[bs];
 #pragma omp parallel for
-    for (unsigned int i = 0 ; i < bs ; i++){
+    for (int i = 0 ; i < bs ; i++){
         output[i] = image[i] / norm;
     }
 }
@@ -110,11 +110,11 @@ void normL2(float* image, unsigned int sx, unsigned int sy, unsigned int sz, uns
 void normRC(float* image, unsigned int sx, unsigned int sy, unsigned int sz, unsigned int st, unsigned int sc, float* output)
 {
     // calculate normL2
-    unsigned long n = sx*sy*sz*st*sc;
+    int n = sx*sy*sz*st*sc;
     float mean = 0.0;
     float var = 0.0;
     float v;
-    for (unsigned long i = 1 ; i < n; i++){
+    for (int i = 1 ; i < n; i++){
         v = image[i];
         mean += v;
         var += v*v;
@@ -126,7 +126,7 @@ void normRC(float* image, unsigned int sx, unsigned int sy, unsigned int sz, uns
     // normalize
     //output = new float[n];
 #pragma omp parallel for
-    for (unsigned int i = 0 ; i < n ; i++){
+    for (int i = 0 ; i < n ; i++){
         output[i] = (image[i]-mean) / var;
     }
 }
@@ -134,10 +134,10 @@ void normRC(float* image, unsigned int sx, unsigned int sy, unsigned int sz, uns
 void normValue(float* image, unsigned int sx, unsigned int sy, unsigned int sz, unsigned int st, unsigned int sc, float* output, float normValue)
 {
     // normalize
-    unsigned long bs = sx*sy*sz*st*sc;
+    int bs = sx*sy*sz*st*sc;
     //output = new float[bs];
 #pragma omp parallel for
-    for (unsigned int i = 0 ; i < bs ; i++){
+    for (int i = 0 ; i < bs ; i++){
         output[i] = image[i] / normValue;
     }
 }
