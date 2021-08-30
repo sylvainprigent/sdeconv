@@ -60,7 +60,7 @@ jobs:
       - name: Install dependencies macOS
         if: runner.os == 'macOS' 
         run: |
-          conda install -c conda-forge fftw
+          sudo conda install -c conda-forge fftw
           python -m pip install --upgrade pip
           pip install setuptools tox numpy scipy cython tox-gh-actions   
       - name: Install dependencies Linux
