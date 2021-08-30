@@ -31,5 +31,5 @@ def test_psf_gl():
     print('ref image shape', ref_image.shape)
     print('test image shape', psf.shape)
 
-    assert np.array_equal(psf, ref_image)
+    assert np.allclose(psf, ref_image, rtol=1e-08, atol=1e-08)
 

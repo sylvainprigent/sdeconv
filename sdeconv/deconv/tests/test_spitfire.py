@@ -26,7 +26,7 @@ def test_spitfire_hv_2d():
     # imsave(ref_file, deconv_image)
     ref_image = imread(ref_file)
 
-    assert np.array_equal(deconv_image, ref_image)
+    assert np.allclose(deconv_image, ref_image, rtol=1e-03, atol=1e-03)
 
 
 def test_spitfire_sv_2d():
@@ -48,7 +48,7 @@ def test_spitfire_sv_2d():
     # imsave(ref_file, deconv_image)
     ref_image = imread(ref_file)
 
-    assert np.array_equal(deconv_image, ref_image)
+    assert np.allclose(deconv_image, ref_image, rtol=1e-03, atol=1e-03)
 
 
 def test_spitfire_hv_3d():
@@ -68,7 +68,7 @@ def test_spitfire_hv_3d():
     # imsave(ref_file, deconv_image)
     ref_image = imread(ref_file)
 
-    assert np.array_equal(deconv_image, ref_image)
+    assert np.allclose(deconv_image, ref_image, rtol=1e-03, atol=1e-03)
 
 
 def test_spitfire_sv_3d():
@@ -88,4 +88,4 @@ def test_spitfire_sv_3d():
     # imsave(ref_file, deconv_image)
     ref_image = imread(ref_file)
 
-    assert np.array_equal(deconv_image, ref_image)
+    assert np.allclose(deconv_image, ref_image, rtol=1e-03, atol=1e-03)

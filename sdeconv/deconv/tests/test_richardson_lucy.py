@@ -22,7 +22,7 @@ def test_richardson_lucy_2d():
     # imsave(ref_file, deconv_image)
     ref_image = imread(ref_file)
 
-    assert np.array_equal(deconv_image, ref_image)
+    assert np.allclose(deconv_image, ref_image, rtol=1e-03, atol=1e-03)
 
 
 def test_richardson_lucy_3d():
@@ -38,4 +38,4 @@ def test_richardson_lucy_3d():
     # imsave(ref_file, deconv_image)
     ref_image = imread(ref_file)
 
-    assert np.array_equal(deconv_image, ref_image)
+    assert np.allclose(deconv_image, ref_image, rtol=1e-03, atol=1e-03)
