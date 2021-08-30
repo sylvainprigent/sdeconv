@@ -51,15 +51,18 @@ jobs:
       # setup-miniconda: https://github.com/conda-incubator/setup-miniconda
       # and
       # tox-conda: https://github.com/tox-dev/tox-conda
-      - name: Install dependencies Windows
+      - name: Build and test Windows
         if: runner.os == 'Windows' 
         run: |
           C:\Miniconda\condabin\conda.bat init powershell
+          C:\Miniconda\condabin\conda.bat create -n myenv python=${{ matrix.python-version }}
+          C:\Miniconda\condabin\conda.bat activate myenv
           C:\Miniconda\condabin\conda.bat install -c conda-forge fftw
-          python -m pip install --upgrade pip
-          pip install setuptools tox numpy scipy cython tox-gh-actions
-          python3 setup.py build_ext --inplace  
-      - name: Install dependencies macOS
+          C:\Miniconda\condabin\python -m pip install --upgrade pip
+          C:\Miniconda\condabin\pip install setuptools tox numpy scipy cython tox-gh-actions 
+          C:\Miniconda\condabin\python setup.py build_ext --inplace
+          C:\Miniconda\condabin\tox
+      - name: Build and test macOS
         if: runner.os == 'macOS' 
         run: |
           sudo conda init bash
@@ -69,7 +72,8 @@ jobs:
           sudo $CONDA/bin/python -m pip install --upgrade pip
           sudo $CONDA/bin/pip install setuptools tox numpy scipy cython tox-gh-actions 
           sudo $CONDA/bin/python setup.py build_ext --inplace  
-      - name: Install dependencies Linux
+          $CONDA/bin/tox
+      - name: Build and test Linux
         if: runner.os == 'Linux' 
         run: |
           conda init bash
@@ -78,12 +82,8 @@ jobs:
           conda install -c conda-forge fftw
           $CONDA/bin/python -m pip install --upgrade pip
           $CONDA/bin/pip install setuptools tox numpy scipy cython tox-gh-actions 
-          $CONDA/bin/python setup.py build_ext --inplace       
-      # this runs the platform-specific tests declared in tox.ini          
-      - name: Test with tox
-        run: $CONDA/bin/tox
-        env:
-          PLATFORM: ${{ matrix.platform }}
+          $CONDA/bin/python setup.py build_ext --inplace    
+          $CONDA/bin/tox   
 
       - name: Coverage
         uses: codecov/codecov-action@v1
