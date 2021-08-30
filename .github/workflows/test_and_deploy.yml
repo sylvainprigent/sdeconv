@@ -22,7 +22,7 @@ jobs:
     runs-on: ${{ matrix.platform }}
     strategy:
       matrix:
-        platform: [ubuntu-latest]
+        platform: [macos-latest]
         python-version: [3.9]
 
     steps:
@@ -63,10 +63,12 @@ jobs:
         if: runner.os == 'macOS' 
         run: |
           sudo conda init bash
-          sudo conda install -c conda-forge fftw
-          python -m pip install --upgrade pip
-          pip install setuptools tox numpy scipy cython tox-gh-actions   
-          python3 setup.py build_ext --inplace  
+          sudo conda create -n myenv python=${{ matrix.python-version }}
+          $CONDA/bin/activate myenv
+          conda install -c conda-forge fftw
+          $CONDA/bin/python -m pip install --upgrade pip
+          $CONDA/bin/pip install setuptools tox numpy scipy cython tox-gh-actions 
+          $CONDA/bin/python setup.py build_ext --inplace  
       - name: Install dependencies Linux
         if: runner.os == 'Linux' 
         run: |
