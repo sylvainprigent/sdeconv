@@ -61,7 +61,7 @@ jobs:
           C:\Miniconda\envs\myenv\python.exe -m pip install --upgrade pip
           C:\Miniconda\envs\myenv\python.exe -m pip install setuptools tox numpy scipy cython tox-gh-actions 
           C:\Miniconda\envs\myenv\python.exe setup.py build_ext --inplace
-          C:\Miniconda\envs\myenv\tox
+          tox
       - name: Build and test macOS
         if: runner.os == 'macOS' 
         run: |
