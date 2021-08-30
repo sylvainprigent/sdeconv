@@ -58,10 +58,10 @@ jobs:
           C:\Miniconda\condabin\conda.bat create -n myenv python=${{ matrix.python-version }}
           C:\Miniconda\condabin\conda.bat activate myenv
           C:\Miniconda\condabin\conda.bat install -c conda-forge fftw
-          C:\Miniconda\python.exe -m pip install --upgrade pip
-          C:\Miniconda\python.exe -m pip install setuptools tox numpy scipy cython tox-gh-actions 
-          C:\Miniconda\python.exe setup.py build_ext --inplace
-          tox
+          C:\Miniconda\envs\myenv\python.exe -m pip install --upgrade pip
+          C:\Miniconda\envs\myenv\python.exe -m pip install setuptools tox numpy scipy cython tox-gh-actions 
+          C:\Miniconda\envs\myenv\python.exe setup.py build_ext --inplace
+          C:\Miniconda\envs\myenv\tox
       - name: Build and test macOS
         if: runner.os == 'macOS' 
         run: |
