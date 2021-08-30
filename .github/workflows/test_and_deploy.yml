@@ -54,13 +54,14 @@ jobs:
       - name: Build and test Windows
         if: runner.os == 'Windows' 
         run: |
-          conda init powershell
-          conda create -n myenv python=${{ matrix.python-version }}
-          conda activate myenv
-          conda install --yes -c conda-forge fftw
-          python -m pip install --upgrade pip
-          python -m pip install setuptools tox numpy scipy cython tox-gh-actions 
-          python setup.py build_ext --inplace
+          C:\Miniconda\condabin\conda.bat init powershell
+          C:\Miniconda\condabin\conda.bat create -n myenv python=${{ matrix.python-version }}
+          C:\Miniconda\condabin\conda.bat activate myenv
+          set PATH=%PATH%;C:\Miniconda\envs\myenv
+          C:\Miniconda\condabin\conda.bat install --yes -c conda-forge fftw
+          C:\Miniconda\envs\myenv\python.exe -m pip install --upgrade pip
+          C:\Miniconda\envs\myenv\python.exe -m pip install setuptools tox numpy scipy cython tox-gh-actions 
+          C:\Miniconda\envs\myenv\python.exe setup.py build_ext --inplace
           tox
       - name: Build and test macOS
         if: runner.os == 'macOS' 
