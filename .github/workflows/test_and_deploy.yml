@@ -96,6 +96,9 @@ jobs:
     # github secrets (see readme for details)
     needs: [test]
     runs-on: ${{ matrix.platform }}
+    strategy:
+      matrix:
+        platform: [ubuntu-latest, windows-latest, macos-latest]
     if: contains(github.ref, 'tags')
     steps:
       - uses: actions/checkout@v2
