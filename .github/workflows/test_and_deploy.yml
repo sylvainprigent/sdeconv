@@ -61,6 +61,7 @@ jobs:
           copy C:\Miniconda\Library\include\fftw3.h C:\Miniconda\include\fftw3.h
           copy C:\Miniconda\Library\lib\fftw3f.lib C:\Miniconda\libs\fftw3f.lib 
           dir C:\Miniconda\libs
+          dir C:\Miniconda\include
           dir C:\Miniconda\Library\lib
           dir C:\Miniconda\Library\include
           C:\Miniconda\envs\myenv\python.exe -m pip install --upgrade pip
