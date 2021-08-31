@@ -37,7 +37,7 @@ DOWNLOAD_URL = 'https://github.com/sylvainprigent/sdeconv'
 LICENSE = 'GPL-3.0'
 PROJECT_URLS = {
     'Bug Tracker': 'https://github.com/sylvainprigent/sdeconv/issues',
-    'Documentation': '',
+    'Documentation': 'https://github.com/sylvainprigent/sdeconv/',
     'Source Code': 'https://github.com/sylvainprigent/sdeconv'
 }
 
