@@ -60,14 +60,10 @@ jobs:
           C:\Miniconda\condabin\conda.bat install --yes -c conda-forge fftw
           copy C:\Miniconda\Library\include\fftw3.h C:\Miniconda\include\fftw3.h
           copy C:\Miniconda\Library\lib\fftw3f.lib C:\Miniconda\libs\fftw3f.lib 
-          dir C:\Miniconda\libs
-          dir C:\Miniconda\include
-          dir C:\Miniconda\Library\lib
-          dir C:\Miniconda\Library\include
           C:\Miniconda\python.exe -m pip install --upgrade pip
           C:\Miniconda\python.exe -m pip install setuptools tox numpy scipy cython tox-gh-actions 
           C:\Miniconda\python.exe setup.py build_ext --inplace
-          dir D:\a\sdeconv\sdeconv
+          dir D:\a\sdeconv\sdeconv\sdeconv\deconv\wrappers
       - name: Build and test macOS
         if: runner.os == 'macOS' 
         run: |
