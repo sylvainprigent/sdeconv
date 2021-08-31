@@ -58,11 +58,11 @@ jobs:
           C:\Miniconda\condabin\conda.bat create -n myenv python=${{ matrix.python-version }}
           C:\Miniconda\condabin\conda.bat activate myenv
           C:\Miniconda\condabin\conda.bat install --yes -c conda-forge fftw
+          copy C:\Miniconda\Library\include\fftw3.h C:\Miniconda\include\fftw3.h
+          copy C:\Miniconda\Library\lib\fftw3f.lib C:\Miniconda\libs\fftw3f.lib 
           dir C:\Miniconda\libs
           dir C:\Miniconda\Library\lib
           dir C:\Miniconda\Library\include
-          copy C:\Miniconda\Library\include\fftw3.* C:\Miniconda\include
-          copy C:\Miniconda\Library\lib\fftw3f.lib C:\Miniconda\libs\fftw3f.lib 
           C:\Miniconda\envs\myenv\python.exe -m pip install --upgrade pip
           C:\Miniconda\envs\myenv\python.exe -m pip install setuptools tox numpy scipy cython tox-gh-actions 
           C:\Miniconda\envs\myenv\python.exe setup.py build_ext --inplace
