@@ -95,7 +95,7 @@ jobs:
     # and requires that you have put your twine API key in your
     # github secrets (see readme for details)
     needs: [test]
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.platform }}
     if: contains(github.ref, 'tags')
     steps:
       - uses: actions/checkout@v2
@@ -103,16 +103,47 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: "3.x"
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install numpy scipy cython
-          pip install -U setuptools setuptools_scm wheel twine
-      - name: Build and publish
+      - name: Build and publish windows
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.TWINE_API_KEY }}
+        if: runner.os == 'Windows' 
         run: |
-          git tag
-          python setup.py sdist bdist_wheel
-          twine upload dist/*
+          C:\Miniconda\condabin\conda.bat init powershell
+          C:\Miniconda\condabin\conda.bat create -n myenv python=${{ matrix.python-version }}
+          C:\Miniconda\condabin\conda.bat activate myenv
+          C:\Miniconda\condabin\conda.bat install --yes -c conda-forge fftw
+          copy C:\Miniconda\Library\include\fftw3.h C:\Miniconda\include\fftw3.h
+          copy C:\Miniconda\Library\lib\fftw3f.lib C:\Miniconda\libs\fftw3f.lib 
+          C:\Miniconda\python.exe -m pip install --upgrade pip
+          C:\Miniconda\python.exe -m pip install setuptools numpy scipy cython wheel twine
+          C:\Miniconda\python.exe setup.py bdist_wheel
+          twine upload dist/*   
+      - name: Build and publish linux
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.TWINE_API_KEY }}
+        if: runner.os == 'Linux' 
+        run: |
+          conda init bash
+          conda create -n myenv python=3.8
+          $CONDA/bin/activate myenv
+          conda install --yes -c conda-forge fftw
+          $CONDA/bin/python -m pip install --upgrade pip
+          $CONDA/bin/pip install setuptools numpy scipy cython wheel twine
+          $CONDA/bin/python setup.py bdist_wheel
+          twine upload dist/*   
+      - name: Build and publish macosx
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.TWINE_API_KEY }}
+        if: runner.os == 'macOS' 
+        run: |
+          sudo conda init bash
+          sudo conda create -n myenv python=3.8
+          sudo $CONDA/bin/activate myenv
+          sudo conda install --yes -c conda-forge fftw
+          sudo $CONDA/bin/python -m pip install --upgrade pip
+          sudo $CONDA/bin/pip install setuptools numpy scipy cython wheel twine
+          sudo $CONDA/bin/python setup.py bdist_wheel  
+          twine upload dist/*          
