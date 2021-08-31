@@ -39,7 +39,7 @@ namespace SImg
         fft2D(buffer_in, fft_in, sx, sy);
 
 #pragma omp parallel for
-        for (unsigned int p = 0; p < n; p++)
+        for (int p = 0; p < int(n); p++)
         {
             buffer_out[p] = 0.5;
         }
@@ -50,7 +50,7 @@ namespace SImg
 
 // flip psf
 #pragma omp parallel for
-        for (unsigned int x = 0; x < sx; x++)
+        for (int x = 0; x < int(sx); x++)
         {
             for (unsigned int y = 0; y < sy; y++)
             {
@@ -66,7 +66,7 @@ namespace SImg
             // tmp = convolve(buffer_out, psf)
             fft2D(buffer_out, fft_out, sx, sy);
 #pragma omp parallel for
-            for (unsigned int p = 0; p < n_fft; p++)
+            for (int p = 0; p < int(n_fft); p++)
             {
                 fft_tmp[p][0] = (fft_out[p][0] * fft_psf[p][0] - fft_out[p][1] * fft_psf[p][1]) * scale;
                 fft_tmp[p][1] = (fft_out[p][1] * fft_psf[p][0] + fft_out[p][0] * fft_psf[p][1]) * scale;
@@ -75,7 +75,7 @@ namespace SImg
 
 // tmp = buffer_in / tmp
 #pragma omp parallel for
-            for (unsigned int p = 0; p < n; p++)
+            for (int p = 0; p < int(n); p++)
             {
                 if (tmp[p] > 1e-9)
                 {
@@ -89,7 +89,7 @@ namespace SImg
             // im_deconv *= convolve(tmp, psf_mirror)
             fft2D(tmp, fft_tmp, sx, sy);
 #pragma omp parallel for
-            for (unsigned int p = 0; p < n_fft; p++)
+            for (int p = 0; p < int(n_fft); p++)
             {
                 fft_tmp[p][0] = (fft_tmp[p][0] * fft_psf[p][0] - fft_tmp[p][1] * fft_psf[p][1]) * scale;
                 fft_tmp[p][1] = (fft_tmp[p][1] * fft_psf[p][0] + fft_tmp[p][0] * fft_psf[p][1]) * scale;
@@ -97,7 +97,7 @@ namespace SImg
             ifft2D(fft_tmp, tmp, sx, sy);
 
 #pragma omp parallel for
-            for (unsigned int p = 0; p < n; p++)
+            for (int p = 0; p < int(n); p++)
             {
                 buffer_out[p] *= tmp[p];
             }
@@ -134,7 +134,7 @@ namespace SImg
         fft2D(buffer_in, fft_in, sx, sy);
 
 #pragma omp parallel for
-        for (unsigned int p = 0; p < n; p++)
+        for (int p = 0; p < int(n); p++)
         {
             buffer_out[p] = 0.5;
         }
@@ -145,7 +145,7 @@ namespace SImg
 
 // flip psf
 #pragma omp parallel for
-        for (unsigned int x = 0; x < sx; x++)
+        for (int x = 0; x < int(sx); x++)
         {
             for (unsigned int y = 0; y < sy; y++)
             {
@@ -161,7 +161,7 @@ namespace SImg
             // tmp = convolve(buffer_out, psf)
             fft2D(buffer_out, fft_out, sx, sy);
 #pragma omp parallel for
-            for (unsigned int p = 0; p < n_fft; p++)
+            for (int p = 0; p < int(n_fft); p++)
             {
                 fft_tmp[p][0] = (fft_out[p][0] * fft_psf[p][0] - fft_out[p][1] * fft_psf[p][1]) * scale;
                 fft_tmp[p][1] = (fft_out[p][1] * fft_psf[p][0] + fft_out[p][0] * fft_psf[p][1]) * scale;
@@ -170,7 +170,7 @@ namespace SImg
 
 // tmp = buffer_in / tmp
 #pragma omp parallel for
-            for (unsigned int p = 0; p < n; p++)
+            for (int p = 0; p < int(n); p++)
             {
                 if (tmp[p] > 1e-9)
                 {
@@ -184,7 +184,7 @@ namespace SImg
             // im_deconv *= convolve(tmp, psf_mirror)
             fft2D(tmp, fft_tmp, sx, sy);
 #pragma omp parallel for
-            for (unsigned int p = 0; p < n_fft; p++)
+            for (int p = 0; p < int(n_fft); p++)
             {
                 fft_tmp[p][0] = (fft_tmp[p][0] * fft_psf[p][0] - fft_tmp[p][1] * fft_psf[p][1]) * scale;
                 fft_tmp[p][1] = (fft_tmp[p][1] * fft_psf[p][0] + fft_tmp[p][0] * fft_psf[p][1]) * scale;
@@ -193,7 +193,7 @@ namespace SImg
 
 // out *= tmp * 1 / ( 1 + lambda* l1(grad(grad/normgrad)))
 #pragma omp parallel for
-            for (unsigned int x = 0; x < sx - 1; x++)
+            for (int x = 0; x < int(sx - 1); x++)
             {
                 for (unsigned int y = 0; y < sy - 1; y++)
                 {
@@ -213,7 +213,7 @@ namespace SImg
                 }
             }
 #pragma omp parallel for
-            for (unsigned int x = 0; x < sx - 1; x++)
+            for (int x = 0; x < int(sx - 1); x++)
             {
                 for (unsigned int y = 0; y < sy - 1; y++)
                 {
@@ -253,7 +253,7 @@ namespace SImg
         fft3D(buffer_in, fft_in, sx, sy, sz);
 
 #pragma omp parallel for
-        for (unsigned int p = 0; p < n; p++)
+        for (int p = 0; p < int(n); p++)
         {
             buffer_out[p] = 0.5;
         }
@@ -283,7 +283,7 @@ namespace SImg
             // tmp = convolve(buffer_out, psf)
             fft3D(buffer_out, fft_out, sx, sy, sz);
 #pragma omp parallel for
-            for (unsigned int p = 0; p < n_fft; p++)
+            for (int p = 0; p < int(n_fft); p++)
             {
                 fft_tmp[p][0] = (fft_out[p][0] * fft_psf[p][0] - fft_out[p][1] * fft_psf[p][1]) * scale;
                 fft_tmp[p][1] = (fft_out[p][1] * fft_psf[p][0] + fft_out[p][0] * fft_psf[p][1]) * scale;
@@ -292,7 +292,7 @@ namespace SImg
 
 // tmp = buffer_in / tmp
 #pragma omp parallel for
-            for (unsigned int p = 0; p < n; p++)
+            for (int p = 0; p < int(n); p++)
             {
                 if (tmp[p] > 1e-9)
                 {
@@ -306,7 +306,7 @@ namespace SImg
             // im_deconv *= convolve(tmp, psf_mirror)
             fft3D(tmp, fft_tmp, sx, sy, sz);
 #pragma omp parallel for
-            for (unsigned int p = 0; p < n_fft; p++)
+            for (int p = 0; p < int(n_fft); p++)
             {
                 fft_tmp[p][0] = (fft_tmp[p][0] * fft_psf[p][0] - fft_tmp[p][1] * fft_psf[p][1]) * scale;
                 fft_tmp[p][1] = (fft_tmp[p][1] * fft_psf[p][0] + fft_tmp[p][0] * fft_psf[p][1]) * scale;
@@ -314,7 +314,7 @@ namespace SImg
             ifft3D(fft_tmp, tmp, sx, sy, sz);
 
 #pragma omp parallel for
-            for (unsigned int p = 0; p < n; p++)
+            for (int p = 0; p < int(n); p++)
             {
                 buffer_out[p] *= tmp[p];
             }
