@@ -53,7 +53,7 @@ namespace SImg
 
         float *adjoint_PSF = new float[sx * sy];
 #pragma omp parallel for
-        for (unsigned int x = 0; x < sx; ++x)
+        for (int x = 0; x < int(sx); ++x)
         {
             for (unsigned int y = 0; y < sy; ++y)
             {
@@ -164,7 +164,7 @@ namespace SImg
             //ifft2D(residue_image_FT, residue_image, sx, sy);
 
 #pragma omp parallel for
-            for (unsigned int x = 1; x < sx - 1; ++x)
+            for (int x = 1; x < int(sx - 1); ++x)
             {
                 for (unsigned int y = 1; y < sy - 1; ++y)
                 {
@@ -214,7 +214,7 @@ namespace SImg
             }
 
 #pragma omp parallel for
-            for (unsigned int x = 1; x < sx - 1; ++x)
+            for (int x = 1; x < int(sx - 1); ++x)
             {
                 for (unsigned int y = 1; y < sy - 1; ++y)
                 {
@@ -298,7 +298,7 @@ namespace SImg
 
         float *adjoint_PSF = new float[sx * sy];
 #pragma omp parallel for
-        for (unsigned int x = 0; x < sx; ++x)
+        for (int x = 0; x < int(sx); ++x)
         {
             for (unsigned int y = 0; y < sy; ++y)
             {
@@ -410,7 +410,7 @@ namespace SImg
 
             // primal
 #pragma omp parallel for
-            for (unsigned int x = 1; x < sx - 1; ++x)
+            for (int x = 1; x < int(sx - 1); ++x)
             {
                 for (unsigned int y = 1; y < sy - 1; ++y)
                 {
@@ -466,7 +466,7 @@ namespace SImg
             }
 
 #pragma omp parallel for
-            for (unsigned int x = 1; x < sx - 1; ++x)
+            for (int x = 1; x < int(sx - 1); ++x)
             {
                 for (unsigned int y = 1; y < sy - 1; ++y)
                 {
@@ -586,7 +586,7 @@ namespace SImg
         }
 
 #pragma omp parallel for
-        for (unsigned int i = 0; i < bs; ++i)
+        for (int i = 0; i < int(bs); ++i)
         {
             deconv_image[i] = (deconv_image[i] - omin)/(omax-omin);
             deconv_image[i] = deconv_image[i] * (imax - imin) + imin;
