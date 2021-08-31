@@ -135,7 +135,7 @@ jobs:
           $CONDA/bin/python -m pip install --upgrade pip
           $CONDA/bin/pip install setuptools numpy scipy cython wheel twine
           $CONDA/bin/python setup.py bdist_wheel
-          $CONDA/bin/python -m twine upload -u __token__ -p ${{ secrets.TWINE_API_KEY }} dist/*   
+          $CONDA/bin/python -m twine upload --verbose -u __token__ -p ${{ secrets.TWINE_API_KEY }} dist/*   
       - name: Build and publish macosx
         env:
           TWINE_USERNAME: __token__
