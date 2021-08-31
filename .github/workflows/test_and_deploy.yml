@@ -57,7 +57,7 @@ jobs:
           C:\Miniconda\condabin\conda.bat init powershell
           C:\Miniconda\condabin\conda.bat create -n myenv python=${{ matrix.python-version }}
           C:\Miniconda\condabin\conda.bat activate myenv
-          set FFT_INCLUDE=C:\Miniconda\envs\myenv\Library\include"
+          set FFT_INCLUDE=C:\Miniconda\envs\myenv\Library\include
           copy C:\Miniconda\envs\myenv\Library\lib\fftw3f.lib C:\Miniconda\envs\myenv\libs\fftw3f.lib 
           C:\Miniconda\condabin\conda.bat install --yes -c conda-forge fftw
           C:\Miniconda\envs\myenv\python.exe -m pip install --upgrade pip
