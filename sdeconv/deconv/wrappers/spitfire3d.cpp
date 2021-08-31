@@ -95,7 +95,7 @@ namespace SImg
         float *residue_image = (float *)malloc(sizeof(float) * N);
 
 #pragma omp parallel for
-        for (unsigned int i = 0; i < N; i++)
+        for (int i = 0; i < int(N); i++)
         {
             dual_images0[i] = 0.0;
             dual_images1[i] = 0.0;
@@ -118,7 +118,7 @@ namespace SImg
         free(adjoint_OTFReal);
 
 #pragma omp parallel for
-        for (unsigned int i = 0; i < Nfft; i++)
+        for (int i = 0; i < int(Nfft); i++)
         {
             deconv_image_FT[i][0] = blurry_image_FT[i][0];
             deconv_image_FT[i][1] = blurry_image_FT[i][1];
@@ -139,7 +139,7 @@ namespace SImg
         {
             // Primal optimization
 #pragma omp parallel for
-            for (unsigned int i = 0; i < N; i++)
+            for (int i = 0; i < int(N); i++)
             {
                 auxiliary_image[i] = deconv_image[i];
             }
@@ -147,7 +147,7 @@ namespace SImg
 
             // Data term
 #pragma omp parallel for
-            for (unsigned int i = 0; i < Nfft; i++)
+            for (int i = 0; i < int(Nfft); i++)
             {
                 float real_tmp = OTF[i][0] * deconv_image_FT[i][0] - OTF[i][1] * deconv_image_FT[i][1] - blurry_image_FT[i][0];
                 float imag_tmp = OTF[i][0] * deconv_image_FT[i][1] + OTF[i][1] * deconv_image_FT[i][0] - blurry_image_FT[i][1];
@@ -160,7 +160,7 @@ namespace SImg
 
             // gradient term
 #pragma omp parallel for
-            for (unsigned int x = 1; x < sx - 1; x++)
+            for (int x = 1; x < int(sx - 1); x++)
             {
                 for (unsigned int y = 1; y < sy - 1; y++)
                 {
@@ -209,13 +209,13 @@ namespace SImg
 
             // Dual optimization
 #pragma omp parallel for
-            for (unsigned int i = 0; i < N; i++)
+            for (int i = 0; i < int(N); i++)
             {
                 auxiliary_image[i] = 2 * deconv_image[i] - auxiliary_image[i];
             }
 
 #pragma omp parallel for
-            for (unsigned int x = 1; x < sx - 1; x++)
+            for (int x = 1; x < int(sx - 1); x++)
             {
                 for (unsigned int y = 1; y < sy - 1; y++)
                 {
@@ -235,7 +235,7 @@ namespace SImg
             }
 
 #pragma omp parallel for
-            for (unsigned int i = 0; i < N; i++)
+            for (int i = 0; i < int(N); i++)
             {
                 float tmp = inv_reg * sqrt(dual_images0[i] * dual_images0[i] + dual_images1[i] * dual_images1[i] + dual_images2[i] * dual_images2[i] + dual_images3[i] * dual_images3[i]);
                 if (tmp > 1.0)
@@ -274,7 +274,7 @@ namespace SImg
     {
         int N = sx * sy * sz;
         int Nfft = sx * sy * (sz / 2 + 1);
-        float sqrt2 = sqrt(2.);
+        float sqrt2 = float(sqrt(2.));
 
 #ifdef SL_USE_OPENMP
         observable->notify("Use " + std::to_string(omp_get_max_threads()) + " threads");
@@ -330,7 +330,7 @@ namespace SImg
         float *residue_image = (float *)malloc(sizeof(float) * N);
 
 #pragma omp parallel for
-        for (int i = 0; i < N; i++)
+        for (int i = 0; i < int(N); i++)
         {
             dual_images0[i] = 0.0;
             dual_images1[i] = 0.0;
@@ -357,7 +357,7 @@ namespace SImg
         free(adjoint_OTFReal);
 
 #pragma omp parallel for
-        for (int i = 0; i < Nfft; i++)
+        for (int i = 0; i < int(Nfft); i++)
         {
             deconv_image_FT[i][0] = blurry_image_FT[i][0];
             deconv_image_FT[i][1] = blurry_image_FT[i][1];
@@ -398,7 +398,7 @@ namespace SImg
 
             // gradient term
 #pragma omp parallel for
-            for (unsigned int x = 1; x < sx - 1; x++)
+            for (int x = 1; x < int(sx - 1); x++)
             {
                 for (unsigned int y = 1; y < sy - 1; y++)
                 {
@@ -463,7 +463,7 @@ namespace SImg
             }
 
 #pragma omp parallel for
-            for (unsigned int x = 1; x < sx-1; x++)
+            for (int x = 1; x < int(sx-1); x++)
             {
                 for (unsigned int y = 1; y < sy-1; y++)
                 {
@@ -584,7 +584,7 @@ namespace SImg
         }
 
 #pragma omp parallel for
-        for (unsigned int i = 0; i < bs; ++i)
+        for (int i = 0; i < int(bs); ++i)
         {
             deconv_image[i] = (deconv_image[i] - omin)/(omax-omin);
             deconv_image[i] = deconv_image[i] * (imax - imin) + imin;
