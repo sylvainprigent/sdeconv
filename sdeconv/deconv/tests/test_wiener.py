@@ -1,41 +1,39 @@
-import pytest
-
 import os
 import numpy as np
-from sdeconv import data
-from sdeconv.deconv import WienerDeconv, PSFGaussian
 from skimage.io import imread, imsave
+import torch
+
+from sdeconv.data import celegans, pollen_poison_noise_blurred, pollen_psf
+from sdeconv.deconv import SWiener
+from sdeconv.psfs import SPSFGaussian
 
 
-def test_wiener_2d():
+# tmp_path is a pytest fixture
+def test_wiener_2d(tmp_path):
+    root_dir = os.path.dirname(os.path.abspath(__file__))
+    image = torch.Tensor(celegans())
 
-    image = data.celegans()
+    psf_generator = SPSFGaussian((1.5, 1.5), (13, 13))
+    psf = psf_generator()
 
-    psf_gauss = PSFGaussian((1.5, 1.5), image.shape)
-    psf_gauss.run()
+    filter_ = SWiener(psf, beta=1.5)
+    out_image = filter_(image)
 
-    wiener = WienerDeconv(lambda_=0.05)
-    deconv_image = wiener.run(image, psf_gauss.psf_)
+    # imsave(os.path.join(root_dir, 'celegans_wiener.tif'), out_image.detach().numpy())
+    ref_image = imread(os.path.join(root_dir, 'celegans_wiener.tif'))
 
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    ref_file = os.path.join(dir_path, 'deconv_wiener_celegans.tif')
-    # imsave(ref_file, deconv_image)
-    ref_image = imread(ref_file)
-
-    assert np.allclose(deconv_image, ref_image, rtol=1e-03, atol=1e-03)
+    np.testing.assert_equal(out_image.detach().numpy(), ref_image)
 
 
-def test_wiener_3d():
+def test_wiener_3d(tmp_path):
+    root_dir = os.path.dirname(os.path.abspath(__file__))
+    image = torch.Tensor(np.float32(pollen_poison_noise_blurred()))
+    psf = torch.Tensor(np.float32(pollen_psf()))
 
-    image = data.pollen_poison_noise_blurred()
-    psf = data.pollen_psf()
+    filter_ = SWiener(psf, beta=8)
+    out_image = filter_(image)
 
-    wiener = WienerDeconv(lambda_=0.005)
-    deconv_image = wiener.run(image, psf)
+    # imsave(os.path.join(root_dir, 'pollen_wiener.tif'), out_image.detach().numpy())
+    ref_image = imread(os.path.join(root_dir, 'pollen_wiener.tif'))
 
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    ref_file = os.path.join(dir_path, 'deconv_wiener_pollen.tif')
-    # imsave(ref_file, deconv_image)
-    ref_image = imread(ref_file)
-
-    assert np.allclose(deconv_image, ref_image, rtol=1e-03, atol=1e-03)
+    np.testing.assert_equal(out_image.detach().numpy(), ref_image)

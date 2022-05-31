@@ -1,10 +1,5 @@
-from .spitfire import SpitfireDeconv
-from .richardson_lucy import RichardsonLucy
-from .wiener import WienerDeconv
-from .psfs import PSFGaussian, PSFGibsonLanni
+from .wiener import SWiener
+from .richardson_lucy import SRichardsonLucy
+from .spitfire import Spitfire
 
-__all__ = ['SpitfireDeconv',
-           'RichardsonLucy',
-           'WienerDeconv',
-           'PSFGaussian',
-           'PSFGibsonLanni']
+__all__ = ['SWiener', 'SRichardsonLucy', 'Spitfire']

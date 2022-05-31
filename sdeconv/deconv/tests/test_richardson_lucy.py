@@ -1,41 +1,39 @@
-import pytest
-
 import os
 import numpy as np
-from sdeconv import data
-from sdeconv.deconv import RichardsonLucy, PSFGaussian
 from skimage.io import imread, imsave
+import torch
+
+from sdeconv.data import celegans, pollen_poison_noise_blurred, pollen_psf
+from sdeconv.deconv import SRichardsonLucy
+from sdeconv.psfs import SPSFGaussian
 
 
-def test_richardson_lucy_2d():
+# tmp_path is a pytest fixture
+def test_richardson_lucy_2d(tmp_path):
+    root_dir = os.path.dirname(os.path.abspath(__file__))
+    image = torch.Tensor(celegans())
 
-    image = data.celegans()
+    psf_generator = SPSFGaussian((1.5, 1.5), (13, 13))
+    psf = psf_generator()
 
-    psf_gauss = PSFGaussian((1.5, 1.5), image.shape)
-    psf_gauss.run()
+    filter_ = SRichardsonLucy(psf, niter=30)
+    out_image = filter_(image)
 
-    rl = RichardsonLucy(niter=40)
-    deconv_image = rl.run(image, psf_gauss.psf_)
+    imsave(os.path.join(root_dir, 'celegans_richardson_lucy.tif'), out_image.detach().numpy())
+    ref_image = imread(os.path.join(root_dir, 'celegans_richardson_lucy.tif'))
 
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    ref_file = os.path.join(dir_path, 'deconv_rl_celegans.tif')
-    # imsave(ref_file, deconv_image)
-    ref_image = imread(ref_file)
-
-    assert np.allclose(deconv_image, ref_image, rtol=1e-03, atol=1e-03)
+    np.testing.assert_equal(out_image.detach().numpy(), ref_image)
 
 
-def test_richardson_lucy_3d():
+def test_richardson_lucy_3d(tmp_path):
+    root_dir = os.path.dirname(os.path.abspath(__file__))
+    image = torch.Tensor(np.float32(pollen_poison_noise_blurred()))
+    psf = torch.Tensor(np.float32(pollen_psf()))
 
-    image = data.pollen_poison_noise_blurred()
-    psf = data.pollen_psf()
+    filter_ = SRichardsonLucy(psf, niter=50)
+    out_image = filter_(image)
 
-    wiener = RichardsonLucy(niter=40)
-    deconv_image = wiener.run(image, psf)
+    imsave(os.path.join(root_dir, 'pollen_richardson_lucy.tif'), out_image.detach().numpy())
+    ref_image = imread(os.path.join(root_dir, 'pollen_richardson_lucy.tif'))
 
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    ref_file = os.path.join(dir_path, 'deconv_rl_pollen.tif')
-    # imsave(ref_file, deconv_image)
-    ref_image = imread(ref_file)
-
-    assert np.allclose(deconv_image, ref_image, rtol=1e-03, atol=1e-03)
+    np.testing.assert_equal(out_image.detach().numpy(), ref_image)

@@ -1,65 +1,240 @@
-"""Sparse and TV/HV denoising classes
-
-Classes
--------
-SpitfireDenoise
-
-"""
-
-import math
-import numpy as np
-from .wrappers._spitfire_deconv import (py_spitfire_deconv_2d,
-                                        py_spitfire_deconv_3d)
+import torch
+from .interface import SDeconvFilter
 
 
-class SpitfireDeconv:
-    """Deconvolution of an image using the sparse variation model
+def hv_loss(img, weighting):
+    """Sparse Hessian regularization term
 
     Parameters
     ----------
-    regularization: float
-        Regularization parameter. It is express in power of 2
-        (reg = pow(2, -regularization))
+    img: Tensor
+        Tensor of shape BCYX containing the estimated image
     weighting: float
-        weighting parameter between the Hessian and Intensity term
-        [0.6, 0.9, 1.0]
-    model: str
-        Regularization model (SV or HV)
-    niter: int
-        Maximum number of iterations
+        Sparse weighting parameter in [0, 1]. 0 sparse, and 1 not sparse
+
     """
+    a, b, h, w = img.size()
+    dxx2 = torch.square(-img[:, :, 2:, 1:-1] + 2 * img[:, :, 1:-1, 1:-1] - img[:, :, :-2, 1:-1])
+    dyy2 = torch.square(-img[:, :, 1:-1, 2:] + 2 * img[:, :, 1:-1, 1:-1] - img[:, :, 1:-1, :-2])
+    dxy2 = torch.square(img[:, :, 2:, 2:] - img[:, :, 2:, 1:-1] - img[:, :, 1:-1, 2:] +
+                        img[:, :, 1:-1, 1:-1])
+    hv = torch.sqrt(weighting * weighting * (dxx2 + dyy2 + 2 * dxy2) +
+                    (1 - weighting) * (1 - weighting) * torch.square(img[:, :, 1:-1, 1:-1])).sum()
+    return hv / (a * b * h * w)
 
-    def __init__(self, regularization: float = 12, weighting: float = 0.6,
-                 model: str = 'HV', niter: int = 200, deltaz: float = 1.0,
-                 deltat: float = 1.0):
-        self.regularization = regularization
-        self.weighting = weighting
-        self.iter = niter
-        self.model = model
-        self.deltaz = deltaz
-        self.deltat = deltat
-        self.deconvolved_ = None
 
-    def run(self, image: np.array, psf: np.array):
-        im = image.astype(np.float32)
-        imin = np.amin(im)
-        imax = np.amax(im)
-        psf = psf.astype(np.float32)
-        psf_ = psf / np.sum(psf)
-        im = im / math.sqrt(np.sum(np.square(im)))
-        if im.ndim == 2:
-            self.deconvolved_ = py_spitfire_deconv_2d(im, psf_,
-                                                      self.regularization,
-                                                      self.weighting,
-                                                      self.model,
-                                                      self.iter)
-            self.deconvolved_ = self.deconvolved_ * (imax - imin) + imin
-        elif im.ndim == 3:
-            self.deconvolved_ = py_spitfire_deconv_3d(im, psf_,
-                                                      self.regularization,
-                                                      self.weighting,
-                                                      self.model,
-                                                      self.iter,
-                                                      self.deltaz)
-            self.deconvolved_ = self.deconvolved_ * (imax - imin) + imin
-        return self.deconvolved_
+def hv_loss_3d(img, weighting):
+    """Sparse Hessian regularization term
+
+    Parameters
+    ----------
+    img: Tensor
+        Tensor of shape BCZYX containing the estimated image
+    weighting: float
+        Sparse weighting parameter in [0, 1]. 0 sparse, and 1 not sparse
+
+    """
+    img_ = img[:, :, 1:-1, 1:-1, 1:-1]
+    d11 = img[:, :, 1:-1, 1:-1, 2:] - 2*img_ - img[:, :, 1:-1, 1:-1, :-2]
+    d22 = img[:, :, 1:-1, 2:, 1:-1] - 2*img_ - img[:, :, 1:-1, :-2, 1:-1]
+    d33 = weighting*weighting*(img[:, :, 2:, 1:-1, 1:-1] - 2*img_ - img[:, :, :-2, 1:-1, 1:-1])
+    d12_d21 = img[:, :, 1:-1, 2:, 2:] - img[:, :, 1:-1, 1:-1, 2:] - img[:, :, 1:-1, 2:, 1:-1] + img_
+    d13_d31 = weighting(img[:, :, 2:, 1:-1, 2:] - img[:, :, 1:-1, 1:-1, 2:] - img[:, :, 2:, 1:-1, 1:-1] + img_)
+    d23_d32 = weighting(img[:, :, 2:, 2:, 1:-1] - img[:, :, 1:-1, 2:, 1:-1] - img[:, :, 2:, 1:-1, 1:-1] + img_)
+    d00 = (1-weighting)*img_
+
+    hv = torch.square(d11) + torch.square(d22) + torch.square(d33) + 2 * torch.square(
+        d12_d21) + 2 * torch.square(d13_d31) + 2 * torch.square(d23_d32) + torch.square(d00)
+
+    return torch.mean(torch.sqrt(hv))
+
+
+def dataterm_deconv(blurry_image, deblurred_image, psf):
+    """Deconvolution L2 data-term
+
+    Compute the L2 error between the original image and the convoluted reconstructed image
+
+    Parameters
+    ----------
+    blurry_image: Tensor
+        Tensor of shape BCYX containing the original blurry image
+    deblurred_image: Tensor
+        Tensor of shape BCYX containing the estimated deblurred image
+    psf: Tensor
+        Tensor containing the point spread function
+
+    """
+    conv_op = torch.nn.Conv2d(1, 1, kernel_size=psf.shape[2],
+                              stride=1,
+                              padding=int((psf.shape[2] - 1) / 2),
+                              bias=False)
+    with torch.no_grad():
+        conv_op.weight = torch.nn.Parameter(psf)
+    mse = torch.nn.MSELoss()
+    return mse(blurry_image, conv_op(deblurred_image))
+
+
+def dataterm_deconv_3d(blurry_image, deblurred_image, psf):
+    """Deconvolution L2 data-term
+
+    Compute the L2 error between the original image and the convoluted reconstructed image
+
+    Parameters
+    ----------
+    blurry_image: Tensor
+        Tensor of shape BCZYX containing the original blurry image
+    deblurred_image: Tensor
+        Tensor of shape BCZYX containing the estimated deblurred image
+    psf: Tensor
+        Tensor containing the point spread function
+
+    """
+    padding = [int((psf.shape[2] - 1) / 2), int((psf.shape[3] - 1) / 2), int((psf.shape[4] - 1) / 2)]
+    conv_op = torch.nn.Conv3d(1, 1, kernel_size=psf.shape,
+                              stride=1,
+                              padding=padding,
+                              bias=False)
+    with torch.no_grad():
+        conv_op.weight = torch.nn.Parameter(psf)
+    mse = torch.nn.MSELoss()
+    return mse(blurry_image, conv_op(deblurred_image))
+
+
+class Spitfire(SDeconvFilter):
+    """Gray scaled image deconvolution with the Spitfire algorithm
+
+    Parameters
+    ----------
+    psf: Tensor
+        Point spread function
+    weight: float
+        model weight between hessian and sparsity. Value is in  ]0, 1[
+    reg: float
+        Regularization weight. Value is in [0, 1]
+
+    """
+    def __init__(self, psf, weight=0.6, reg=0.995):
+        super().__init__()
+        self.psf = psf
+        self.weight = weight
+        self.reg = reg
+        self.niter_ = 0
+        self.max_iter_ = 2000
+        self.gradient_step_ = 0.01
+        self.loss_ = None
+
+    def __call__(self, image):
+        if image.ndim == 2:
+            return self.run_2d(image)
+        elif image.ndim == 3:
+            return self.run_3d(image)
+
+    def run_2d(self, image):
+        self.progress(0)
+        mini = torch.min(image)
+        maxi = torch.max(image)
+        image = (image-mini)/(maxi-mini)
+        # pad image
+        padding = 13
+        pad_fn = torch.nn.ReflectionPad2d(padding)
+        image_pad = pad_fn(image.detach().clone().view(1, 1, image.shape[0], image.shape[1]))
+
+        self.psf = self.psf.view(1, 1, self.psf.shape[0], self.psf.shape[1])
+        deconv_image = image_pad.detach().clone()
+        deconv_image.requires_grad = True
+        optimizer = torch.optim.Adam([deconv_image], lr=self.gradient_step_)
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.5)
+        previous_loss = 9e12
+        count_eq = 0
+        self.niter_ = 0
+        for i in range(self.max_iter_):
+            self.progress(int(100*i/self.max_iter_))
+            self.niter_ += 1
+            optimizer.zero_grad()
+            loss = self.reg * dataterm_deconv(image_pad, deconv_image, self.psf) + \
+                (1-self.reg) * hv_loss(deconv_image, self.weight)
+            print('iter:', self.niter_, ' loss:', loss.item())
+            if abs(loss - previous_loss) < 1e-7:
+                count_eq += 1
+            else:
+                previous_loss = loss
+                count_eq = 0
+            if count_eq > 5:
+                break
+            loss.backward()
+            optimizer.step()
+            scheduler.step()
+        self.loss_ = loss
+        self.progress(100)
+        deconv_image = deconv_image.view(image_pad.shape[2],
+                                         image_pad.shape[3])[padding:-padding, padding:-padding]
+        return (maxi-mini)*deconv_image + mini
+
+    def run_3d(self, image):
+        self.progress(0)
+        mini = torch.min(image)
+        maxi = torch.max(image)
+        image = (image-mini)/(maxi-mini)
+
+        image = image.view(1, 1, image.shape[0], image.shape[1], image.shape[2])
+        self.psf = self.psf.view(1, 1, self.psf.shape[0], self.psf.shape[1], self.psf.shape[2])
+        deconv_image = image.detach().clone()
+        deconv_image.requires_grad = True
+        optimizer = torch.optim.Adam([deconv_image], lr=self.gradient_step_)
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.5)
+        previous_loss = 9e12
+        count_eq = 0
+        self.niter_ = 0
+        for i in range(self.max_iter_):
+            print('iter = ', i)
+            self.progress(int(100*i/self.max_iter_))
+            self.niter_ += 1
+            optimizer.zero_grad()
+            loss = self.reg * dataterm_deconv_3d(image, deconv_image, self.psf) + \
+                (1-self.reg) * hv_loss_3d(deconv_image, self.weight)
+            print('iter:', self.niter_, ' loss:', loss.item())
+            if abs(loss - previous_loss) < 1e-7:
+                count_eq += 1
+            else:
+                previous_loss = loss
+                count_eq = 0
+            if count_eq > 5:
+                break
+            loss.backward()
+            optimizer.step()
+            scheduler.step()
+        self.loss_ = loss
+        self.progress(100)
+        deconv_image = deconv_image.view(image_pad.shape[2],
+                                         image_pad.shape[3],
+                                         image_pad.shape[4])
+        return (maxi-mini)*deconv_image + mini
+
+
+metadata = {
+    'name': 'Spitfire',
+    'label': 'Spitfire',
+    'class': Spitfire,
+    'parameters': {
+        'psf': {
+            'type': torch.Tensor,
+            'label': 'psf',
+            'help': 'Point Spread Function',
+            'default': None
+        },
+        'weight': {
+            'type': float,
+            'label': 'weight',
+            'help': 'Model weight between hessian and sparsity. Value is in  ]0, 1[',
+            'default': 0.6,
+            'range': (0, 1)
+        },
+        'reg': {
+            'type': float,
+            'label': 'Regularization',
+            'help': 'Regularization weight. Value is in [0, 1]',
+            'default': 0.995,
+            'range': (0, 1)
+        }
+    }
+}

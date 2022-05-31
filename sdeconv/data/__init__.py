@@ -1,5 +1,6 @@
 import os.path as osp
 import os
+import numpy as np
 
 __all__ = ['celegans',
            'pollen',
@@ -55,11 +56,11 @@ def celegans():
 
     Returns
     -------
-    pollen : (316, 316) uint16 ndarray
+    pollen : (310, 310) uint16 ndarray
         2D confocal image of a C. elegans intestine.
     """
 
-    return _load("celegans.tif")
+    return _load("celegans.tif")[3:-3, 3:-3]
 
 
 def pollen():
@@ -95,4 +96,5 @@ def pollen_psf():
         Corrupted pollen image.
     """
 
-    return _load("pollen_psf.tif")
+    psf = _load("pollen_psf.tif")
+    return psf / np.sum(psf)

@@ -1,91 +1,39 @@
-import pytest
-
 import os
 import numpy as np
-from sdeconv import data
-from sdeconv.deconv import SpitfireDeconv, PSFGaussian
 from skimage.io import imread, imsave
+import torch
+
+from sdeconv.data import celegans, pollen_poison_noise_blurred, pollen_psf
+from sdeconv.deconv import Spitfire
+from sdeconv.psfs import SPSFGaussian
 
 
-def test_spitfire_hv_2d():
+# tmp_path is a pytest fixture
+def test_spitfire_2d(tmp_path):
+    root_dir = os.path.dirname(os.path.abspath(__file__))
+    image = torch.Tensor(np.float32(celegans()))
 
-    image = data.celegans()
+    psf_generator = SPSFGaussian((1.5, 1.5), (15, 15))
+    psf = psf_generator()
 
-    psf_gauss = PSFGaussian((1.5, 1.5), image.shape)
-    psf_gauss.run()
+    filter_ = Spitfire(psf, weight=0.6, reg=0.98)
+    out_image = filter_(image)
 
-    regularization = pow(2, -12)
-    weighting = 0.6
-    model = 'HV'
-    niter = 200
-    deconv = SpitfireDeconv(regularization, weighting, model, niter)
-    deconv_image = deconv.run(image, psf_gauss.psf_)
+    imsave(os.path.join(root_dir, 'celegans_spitfire.tif'), out_image.detach().numpy())
+    ref_image = imread(os.path.join(root_dir, 'celegans_spitfire.tif'))
 
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    ref_file = os.path.join(dir_path, 'deconv_spitfire_hv_celegans.tif')
-    # imsave(ref_file, deconv_image)
-    ref_image = imread(ref_file)
-
-    assert np.allclose(deconv_image, ref_image, rtol=1e-03, atol=1e-03)
+    np.testing.assert_equal(out_image.detach().numpy(), ref_image)
 
 
-def test_spitfire_sv_2d():
+def test_spitfire_3d(tmp_path):
+    root_dir = os.path.dirname(os.path.abspath(__file__))
+    image = torch.Tensor(np.float32(pollen_poison_noise_blurred()))
+    psf = torch.Tensor(np.float32(pollen_psf()))
 
-    image = data.celegans()
+    filter_ = Spitfire(psf, weight=0.6, reg=0.98)
+    out_image = filter_(image)
 
-    psf_gauss = PSFGaussian((1.5, 1.5), image.shape)
-    psf_gauss.run()
+    # imsave(os.path.join(root_dir, 'pollen_wiener.tif'), out_image.detach().numpy())
+    ref_image = imread(os.path.join(root_dir, 'pollen_spitfire.tif'))
 
-    regularization = pow(2, -12)
-    weighting = 0.6
-    model = 'SV'
-    niter = 200
-    deconv = SpitfireDeconv(regularization, weighting, model, niter)
-    deconv_image = deconv.run(image, psf_gauss.psf_)
-
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    ref_file = os.path.join(dir_path, 'deconv_spitfire_sv_celegans.tif')
-    # imsave(ref_file, deconv_image)
-    ref_image = imread(ref_file)
-
-    assert np.allclose(deconv_image, ref_image, rtol=1e-03, atol=1e-03)
-
-
-def test_spitfire_hv_3d():
-
-    image = data.pollen_poison_noise_blurred()
-    psf = data.pollen_psf()
-
-    regularization = pow(2, -30)
-    weighting = 0.6
-    model = 'HV'
-    niter = 200
-    deconv = SpitfireDeconv(regularization, weighting, model, niter)
-    deconv_image = deconv.run(image, psf)
-
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    ref_file = os.path.join(dir_path, 'deconv_spitfire_hv_pollen.tif')
-    # imsave(ref_file, deconv_image)
-    ref_image = imread(ref_file)
-
-    assert np.allclose(deconv_image, ref_image, rtol=1e-01, atol=1e-01)
-
-
-def test_spitfire_sv_3d():
-
-    image = data.pollen_poison_noise_blurred()
-    psf = data.pollen_psf()
-
-    regularization = pow(2, -30)
-    weighting = 0.6
-    model = 'SV'
-    niter = 200
-    deconv = SpitfireDeconv(regularization, weighting, model, niter)
-    deconv_image = deconv.run(image, psf)
-
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    ref_file = os.path.join(dir_path, 'deconv_spitfire_sv_pollen.tif')
-    # imsave(ref_file, deconv_image)
-    ref_image = imread(ref_file)
-
-    assert np.allclose(deconv_image, ref_image, rtol=1e-03, atol=1e-03)
+    np.testing.assert_equal(out_image.detach().numpy(), ref_image)
