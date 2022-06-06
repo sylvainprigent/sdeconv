@@ -49,14 +49,7 @@ class SWiener(SDeconvFilter):
             return torch.real(torch.fft.ifft2(fft_source * torch.conj(fft_psf) / (
                  self.beta**2 + fft_psf * torch.conj(fft_psf))))[padding:-padding, padding:-padding]
         elif image.ndim == 3:
-            #padding = 16
-            #pad_fn = torch.nn.ReflectionPad3d(padding)
-            #image_pad = pad_fn(image.detach().clone().view(1, image.shape[0], image.shape[1],
-            #                                               image.shape[2])).view(
-            #    (image.shape[0] + 2 * padding, image.shape[1] + 2 * padding, image.shape[2] + 2 * padding))
-
             fft_source = torch.fft.fftn(image)
-            #psf = self._resize_psf_3d(image_pad, self.psf)
             psf_roll = torch.roll(self.psf, int(-self.psf.shape[0] / 2), dims=0)
             psf_roll = torch.roll(psf_roll, int(-self.psf.shape[1] / 2), dims=1)
             psf_roll = torch.roll(psf_roll, int(-self.psf.shape[2] / 2), dims=2)

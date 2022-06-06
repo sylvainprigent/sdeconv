@@ -13,6 +13,7 @@ class SPSFGenerator(SObservable):
     """Interface for a psf generator"""
     def __init__(self):
         super().__init__()
+        self.type = 'SPSFGenerator'
 
     def __call__(self):
         """Generate the PSF

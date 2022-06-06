@@ -13,6 +13,7 @@ class SDeconvFilter(SObservable):
     """Interface for a deconvolution filter"""
     def __init__(self):
         super().__init__()
+        self.type = 'SDeconvFilter'
 
     def __call__(self, image):
         """Do the deconvolution
