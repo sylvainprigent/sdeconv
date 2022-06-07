@@ -51,7 +51,8 @@ def hv_loss_3d(img, delta, weighting):
         weighting*d33) + 2 * torch.square(weighting*d12_d21) + 2 * torch.square(
         weighting*d13_d31) + 2 * torch.square(weighting*d23_d32) + torch.square((1-weighting)*d00)
 
-    return torch.mean(torch.sqrt(hv))
+    #return torch.mean(torch.sqrt(hv))
+    return torch.mean(img)
 
 
 def dataterm_deconv(blurry_image, deblurred_image, psf):
@@ -77,6 +78,36 @@ def dataterm_deconv(blurry_image, deblurred_image, psf):
         conv_op.weight = torch.nn.Parameter(psf)
     mse = torch.nn.MSELoss()
     return mse(blurry_image, conv_op(deblurred_image))
+
+
+class DataTermDeconv3D(torch.autograd.Function):
+
+    @staticmethod
+    def forward(ctx, deblurred_image, blurry_image, fft_psf, adjoint_otf):
+        ctx.save_for_backward(deblurred_image, blurry_image, fft_psf, adjoint_otf)
+
+        fft_deblurred_image = torch.fft.fftn(deblurred_image)
+        conv_deblured_image = torch.real(torch.fft.ifftn(fft_deblurred_image * fft_psf))
+
+        mse = torch.nn.MSELoss()
+        return mse(blurry_image, conv_deblured_image)
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        deblurred_image, blurry_image, fft_psf, adjoint_otf = ctx.saved_tensors
+
+        fft_deblurred_image = torch.fft.fftn(deblurred_image)
+        fft_blurry_image = torch.fft.fftn(blurry_image)
+
+        real_tmp = fft_psf.real * fft_deblurred_image.real - fft_psf.imag * fft_deblurred_image.imag - fft_blurry_image.real
+        imag_tmp = fft_psf.real * fft_deblurred_image.imag + fft_psf.imag * fft_deblurred_image.real - fft_blurry_image.imag
+
+        residue_image_real = adjoint_otf.real * real_tmp - adjoint_otf.imag * imag_tmp
+        residue_image_imag = adjoint_otf.real * imag_tmp + adjoint_otf.imag * real_tmp
+
+        grad_ = torch.real(torch.fft.ifftn(torch.complex(residue_image_real, residue_image_imag)))
+        #print('grad_ = ', grad_output*grad_)
+        return grad_output * grad_, None, None, None
 
 
 def dataterm_deconv_3d(blurry_image, deblurred_image, fft_psf):
@@ -179,13 +210,10 @@ class Spitfire(SDeconvFilter):
         maxi = torch.max(image)
         image = (image-mini)/(maxi-mini)
 
-        #w_filter = SWiener(self.psf, beta=1e-5)
-        #deconv_image = w_filter(image)
-        #deconv_image = (deconv_image - torch.min(deconv_image))/(torch.max(deconv_image)-torch.min(deconv_image))
-        deconv_image = torch.ones(image.shape) # image.detach().clone()
+        deconv_image = image.detach().clone()
 
-        image = image.view(1, image.shape[0], image.shape[1], image.shape[2])
-        deconv_image = deconv_image.view(1, deconv_image.shape[0], deconv_image.shape[1], deconv_image.shape[2])
+        image = image.view(1, 1, image.shape[0], image.shape[1], image.shape[2])
+        deconv_image = deconv_image.view(1, 1, deconv_image.shape[0], deconv_image.shape[1], deconv_image.shape[2])
         deconv_image.requires_grad = True
         optimizer = torch.optim.Adam([deconv_image], lr=self.gradient_step_)
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.5)
@@ -198,13 +226,24 @@ class Spitfire(SDeconvFilter):
         psf_roll = torch.roll(psf_roll, int(-self.psf.shape[2] / 2), dims=2)
         psf_roll.view(1, self.psf.shape[0], self.psf.shape[1], self.psf.shape[2])
         fft_psf = torch.fft.fftn(psf_roll)
+
+        adjoint_psf = torch.flip(self.psf, [0, 1, 2])
+        adjoint_psf = torch.roll(adjoint_psf, -int(self.psf.shape[0] - 1) % 2, dims=0)
+        adjoint_psf = torch.roll(adjoint_psf, -int(self.psf.shape[1] - 1) % 2, dims=1)
+        adjoint_psf = torch.roll(adjoint_psf, -int(self.psf.shape[2] - 1) % 2, dims=2)
+
+        adjoint_psf = torch.roll(adjoint_psf, int(-self.psf.shape[0] / 2), dims=0)
+        adjoint_psf = torch.roll(adjoint_psf, int(-self.psf.shape[1] / 2), dims=1)
+        adjoint_psf = torch.roll(adjoint_psf, int(-self.psf.shape[2] / 2), dims=2)
+        adjoint_otf = torch.fft.fftn(adjoint_psf)
+
+        dataterm_ = DataTermDeconv3D.apply
         for i in range(self.max_iter_):
             self.progress(int(100*i/self.max_iter_))
             self.niter_ += 1
             optimizer.zero_grad()
-            # loss = self.reg * dataterm_deconv_3d(image, deconv_image, fft_psf) + \
-            #     (1-self.reg) * hv_loss_3d(deconv_image, delta, self.weight)
-            loss = dataterm_deconv_3d(image, deconv_image, fft_psf)
+            # loss = dataterm_(deconv_image, image, fft_psf, adjoint_otf)
+            loss = self.reg * dataterm_(deconv_image, image, fft_psf, adjoint_otf) + (1-self.reg) * hv_loss_3d(deconv_image, delta, self.weight)
             print('iter:', self.niter_, ' loss:', loss.item())
             if abs(loss - previous_loss) < self.precision:
                 count_eq += 1
@@ -218,9 +257,9 @@ class Spitfire(SDeconvFilter):
             scheduler.step()
         self.loss_ = loss
         self.progress(100)
-        deconv_image = deconv_image.view(image.shape[1],
-                                         image.shape[2],
-                                         image.shape[3])
+        deconv_image = deconv_image.view(image.shape[2],
+                                         image.shape[3],
+                                         image.shape[4])
         return deconv_image
         # return (maxi-mini)*deconv_image + mini
 
