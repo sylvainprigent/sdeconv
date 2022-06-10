@@ -1,6 +1,38 @@
 import numpy as np
 import torch
 from .interface import SDeconvFilter
+from .utils import pad_2d, pad_3d
+
+
+def laplacian_2d(shape):
+    image = torch.zeros(shape)
+
+    xc = int(shape[0] / 2)
+    yc = int(shape[1] / 2)
+
+    image[xc, yc] = 4
+    image[xc, yc - 1] = -1
+    image[xc, yc + 1] = -1
+    image[xc - 1, yc] = -1
+    image[xc + 1, yc] = -1
+    return image
+
+
+def laplacian_3d(shape):
+    image = torch.zeros(shape)
+
+    xc = int(shape[2] / 2)
+    yc = int(shape[1] / 2)
+    zc = int(shape[0] / 2)
+
+    image[zc, yc, xc] = 6
+    image[zc - 1, yc, xc] = -1
+    image[zc + 1, yc, xc] = -1
+    image[zc, yc - 1, xc] = -1
+    image[zc, yc + 1, xc] = -1
+    image[zc, yc, xc - 1] = -1
+    image[zc, yc, xc - 1] = -1
+    return image
 
 
 class SWiener(SDeconvFilter):
@@ -10,53 +42,54 @@ class SWiener(SDeconvFilter):
     ----------
     psf: Tensor
         Point spread function
+    beta: float
+        Regularisation weight
+    pad: int/tuple
+        Padding in each dimension
 
     """
-    def __init__(self, psf, beta=1e-5):
+    def __init__(self, psf, beta=1e-5, pad=0):
         super().__init__()
         self.psf = psf
         self.beta = beta
-
-    @staticmethod
-    def _resize_psf(image, psf):
-        kernel = torch.zeros(image.shape)
-        x_start = int(image.shape[0] / 2 - psf.shape[0] / 2) + 1
-        y_start = int(image.shape[1] / 2 - psf.shape[1] / 2) + 1
-        kernel[x_start:x_start+psf.shape[0], y_start:y_start+psf.shape[1]] = psf
-        return kernel
-
-    @staticmethod
-    def _resize_psf_3d(image, psf):
-        kernel = torch.zeros(image.shape)
-        x_start = int(image.shape[0] / 2 - psf.shape[0] / 2) + 1
-        y_start = int(image.shape[1] / 2 - psf.shape[1] / 2) + 1
-        z_start = int(image.shape[2] / 2 - psf.shape[2] / 2) + 1
-        kernel[x_start:x_start+psf.shape[0], y_start:y_start+psf.shape[1], z_start:z_start+psf.shape[2]] = psf
-        return kernel
+        self.pad = pad
 
     def __call__(self, image):
         if image.ndim == 2:
-            padding = 13
-            pad_fn = torch.nn.ReflectionPad2d(padding)
-            image_pad = pad_fn(image.detach().clone().view(1, 1, image.shape[0],
-                                                           image.shape[1])).view(
-                (image.shape[0] + 2 * padding, image.shape[1] + 2 * padding))
+            image_pad, psf_pad, padding = pad_2d(image, self.psf/torch.sum(self.psf), self.pad)
+
             fft_source = torch.fft.fft2(image_pad)
-            psf = self._resize_psf(image_pad, self.psf)
-            psf_roll = torch.roll(psf, int(-psf.shape[0] / 2), dims=0)
-            psf_roll = torch.roll(psf_roll, int(-psf.shape[1] / 2), dims=1)
+            psf_roll = torch.roll(psf_pad, int(-psf_pad.shape[0] / 2), dims=0)
+            psf_roll = torch.roll(psf_roll, int(-psf_pad.shape[1] / 2), dims=1)
             fft_psf = torch.fft.fft2(psf_roll)
-            return torch.real(torch.fft.ifft2(fft_source * torch.conj(fft_psf) / (
-                 self.beta**2 + fft_psf * torch.conj(fft_psf))))[padding:-padding, padding:-padding]
+            fft_laplacian = torch.fft.fft2(laplacian_2d(image_pad.shape))
+
+            den = fft_psf*torch.conj(fft_psf)+self.beta*fft_laplacian*torch.conj(fft_laplacian)
+            out_image = torch.real(torch.fft.ifftn((fft_source * torch.conj(fft_psf))/den))
+            if image_pad.shape != image.shape:
+                return out_image[padding[0]: -padding[0], padding[1]: -padding[1]]
+            else:
+                return out_image
+
         elif image.ndim == 3:
-            fft_source = torch.fft.fftn(image)
-            psf_roll = torch.roll(self.psf, int(-self.psf.shape[0] / 2), dims=0)
-            psf_roll = torch.roll(psf_roll, int(-self.psf.shape[1] / 2), dims=1)
-            psf_roll = torch.roll(psf_roll, int(-self.psf.shape[2] / 2), dims=2)
+            image_pad, psf_pad, padding = pad_3d(image, self.psf/torch.sum(self.psf), self.pad)
+
+            fft_source = torch.fft.fftn(image_pad)
+            psf_roll = torch.roll(psf_pad, int(-psf_pad.shape[0] / 2), dims=0)
+            psf_roll = torch.roll(psf_roll, int(-psf_pad.shape[1] / 2), dims=1)
+            psf_roll = torch.roll(psf_roll, int(-psf_pad.shape[2] / 2), dims=2)
 
             fft_psf = torch.fft.fftn(psf_roll)
-            return torch.real(torch.fft.ifftn(fft_source * torch.conj(fft_psf) / (
-                 self.beta**2 + fft_psf * torch.conj(fft_psf))))
+            fft_laplacian = torch.fft.fftn(laplacian_3d(image_pad.shape))
+
+            den = fft_psf*torch.conj(fft_psf)+self.beta*fft_laplacian*torch.conj(fft_laplacian)
+            out_image = torch.real(torch.fft.ifftn((fft_source * torch.conj(fft_psf))/den))
+            if image_pad.shape != image.shape:
+                return out_image[padding[0]:-padding[0],
+                                 padding[1]:-padding[1],
+                                 padding[2]:-padding[2]]
+            else:
+                return out_image
 
 
 metadata = {
