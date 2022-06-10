@@ -17,4 +17,4 @@ def test_psf_gaussian_2d(tmp_path):
     # imsave(os.path.join(root_dir, 'gaussian2d.tif'), psf.detach().numpy())
     ref_psf = imread(os.path.join(root_dir, 'gaussian2d.tif'))
 
-    np.testing.assert_almost_equal(psf.detach().numpy(), ref_psf, decimal=5)
+    np.testing.assert_almost_equal(psf.detach().cpu().numpy(), ref_psf, decimal=5)

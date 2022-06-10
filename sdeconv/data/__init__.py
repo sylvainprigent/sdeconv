@@ -1,6 +1,9 @@
 import os.path as osp
 import os
 import numpy as np
+import torch
+from sdeconv.core import SSettings
+
 
 __all__ = ['celegans',
            'pollen',
@@ -48,7 +51,7 @@ def _load(f):
     # importing io is quite slow since it scans all the backends
     # we lazy import it here
     from skimage.io import imread
-    return imread(_fetch(f))
+    return torch.tensor(np.float32(imread(_fetch(f)))).to(SSettings.instance().device)
 
 
 def celegans():
@@ -97,4 +100,4 @@ def pollen_psf():
     """
 
     psf = _load("pollen_psf.tif")
-    return psf / np.sum(psf)
+    return psf / torch.sum(psf)

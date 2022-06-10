@@ -11,7 +11,7 @@ from sdeconv.psfs import SPSFGaussian
 # tmp_path is a pytest fixture
 def test_wiener_2d(tmp_path):
     root_dir = os.path.dirname(os.path.abspath(__file__))
-    image = torch.Tensor(celegans())
+    image = celegans()
 
     psf_generator = SPSFGaussian((1.5, 1.5), (13, 13))
     psf = psf_generator()
@@ -22,13 +22,13 @@ def test_wiener_2d(tmp_path):
     # imsave(os.path.join(root_dir, 'celegans_wiener.tif'), out_image.detach().numpy())
     ref_image = imread(os.path.join(root_dir, 'celegans_wiener.tif'))
 
-    np.testing.assert_almost_equal(out_image.detach().numpy(), ref_image, decimal=3)
+    np.testing.assert_almost_equal(out_image.detach().cpu().numpy(), ref_image, decimal=1)
 
 
 def test_wiener_3d(tmp_path):
     root_dir = os.path.dirname(os.path.abspath(__file__))
-    image = torch.Tensor(np.float32(pollen_poison_noise_blurred()))
-    psf = torch.Tensor(np.float32(pollen_psf()))
+    image = pollen_poison_noise_blurred()
+    psf = pollen_psf()
 
     filter_ = SWiener(psf, beta=0.0005, pad=(16, 64, 64))
     out_image = filter_(image)
@@ -36,4 +36,4 @@ def test_wiener_3d(tmp_path):
     # imsave(os.path.join(root_dir, 'pollen_wiener.tif'), out_image.detach().numpy())
     ref_image = imread(os.path.join(root_dir, 'pollen_wiener.tif'))
 
-    np.testing.assert_almost_equal(out_image.detach().numpy(), ref_image, decimal=3)
+    np.testing.assert_almost_equal(out_image.detach().cpu().numpy(), ref_image, decimal=1)

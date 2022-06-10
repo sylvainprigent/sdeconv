@@ -2,10 +2,11 @@ import numpy as np
 import torch
 from .interface import SDeconvFilter
 from .utils import pad_2d, pad_3d
+from sdeconv.core import SSettings
 
 
 def laplacian_2d(shape):
-    image = torch.zeros(shape)
+    image = torch.zeros(shape).to(SSettings.instance().device)
 
     xc = int(shape[0] / 2)
     yc = int(shape[1] / 2)
@@ -19,7 +20,7 @@ def laplacian_2d(shape):
 
 
 def laplacian_3d(shape):
-    image = torch.zeros(shape)
+    image = torch.zeros(shape).to(SSettings.instance().device)
 
     xc = int(shape[2] / 2)
     yc = int(shape[1] / 2)
