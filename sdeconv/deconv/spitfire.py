@@ -155,9 +155,6 @@ class Spitfire(SDeconvFilter):
         image_pad, psf_pad, padding = pad_2d(image, self.psf/torch.sum(self.psf), self.pad)
         psf_pad = self.psf/torch.sum(self.psf)
 
-        print('image shape=', image.shape)
-        print('image pad shape=', image_pad.shape)
-
         image_pad = image_pad.view(1, 1, image_pad.shape[0], image_pad.shape[1])
         psf_pad = psf_pad.view(1, 1, psf_pad.shape[0], psf_pad.shape[1])
         deconv_image = image_pad.detach().clone()
@@ -254,7 +251,6 @@ class Spitfire(SDeconvFilter):
                                          image_pad.shape[3],
                                          image_pad.shape[4])
         deconv_image = (maxi-mini)*deconv_image + mini
-        print('padding=', padding)
         if image_pad.shape[2] != image.shape[0] and image_pad.shape[3] != image.shape[1] and \
                 image_pad.shape[4] != image.shape[2]:
             return deconv_image[padding[0]: -padding[0],
