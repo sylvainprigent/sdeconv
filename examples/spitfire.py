@@ -17,7 +17,7 @@ image = celegans()
 psf_generator = SPSFGaussian((1.5, 1.5), (13, 13))
 psf = psf_generator()
 
-# apply Wiener filter
+# apply Spitfire filter
 filter_ = Spitfire(psf, weight=0.6, reg=0.995, gradient_step=0.01, precision=1e-7, pad=13)
 out_image = filter_(image)
 

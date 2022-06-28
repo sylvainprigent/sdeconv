@@ -31,10 +31,11 @@ class SPSFGaussian(SPSFGenerator):
             # print('center= (', x0, ', ', y0, ')')
             sigma_x2 = 0.5 / (self.sigma[0] * self.sigma[0])
             sigma_y2 = 0.5 / (self.sigma[1] * self.sigma[1])
-            for x in range(self.shape[0]):
-                for y in range(self.shape[1]):
-                    self.psf_[x, y] = math.exp(- pow(x-x0, 2) * sigma_x2
-                                               - pow(y-y0, 2) * sigma_y2)
+
+            x, y = torch.meshgrid(torch.arange(0, self.shape[0]), torch.arange(0, self.shape[1]),
+                                  indexing='ij')
+            self.psf_ = torch.exp(- torch.pow(x - x0, 2) * sigma_x2
+                                  - torch.pow(y - y0, 2) * sigma_y2)
             self.psf_ = self.psf_ / torch.sum(self.psf_)
         elif len(self.shape) == 3:
             self.psf_ = torch.zeros(self.shape).to(SSettings.instance().device)
@@ -44,12 +45,15 @@ class SPSFGaussian(SPSFGenerator):
             sigma_x2 = 0.5 / self.sigma[2] * self.sigma[2]
             sigma_y2 = 0.5 / self.sigma[1] * self.sigma[1]
             sigma_z2 = 0.5 / self.sigma[0] * self.sigma[0]
-            for x in range(self.shape[2]):
-                for y in range(self.shape[1]):
-                    for z in range(self.shape[0]):
-                        self.psf_[z, y, x] = math.exp(- pow(x-x0, 2) * sigma_x2
-                                                      - pow(y-y0, 2) * sigma_y2
-                                                      - pow(z-z0, 2) * sigma_z2)
+
+            z, y, x = torch.meshgrid(torch.arange(0, self.shape[0]),
+                                     torch.arange(0, self.shape[1]),
+                                     torch.arange(0, self.shape[2]),
+                                     indexing='ij')
+            self.psf_ = torch.exp(- torch.pow(x - x0, 2) * sigma_x2
+                                  - torch.pow(y - y0, 2) * sigma_y2
+                                  - torch.pow(z - z0, 2) * sigma_z2)
+
             self.psf_ = self.psf_ / torch.sum(self.psf_)
         else:
             raise Exception('PSFGaussian: can generate only 2D or 3D PSFs')
