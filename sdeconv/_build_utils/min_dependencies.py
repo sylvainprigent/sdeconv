@@ -11,6 +11,7 @@ else:
     SCIPY_MIN_VERSION = '0.19.1'
     NUMPY_MIN_VERSION = '1.13.3'
 
+TORCH_MIN_VERSION = '1.11.0'
 JOBLIB_MIN_VERSION = '0.11'
 THREADPOOLCTL_MIN_VERSION = '2.0.0'
 PYTEST_MIN_VERSION = '5.0.1'
@@ -23,6 +24,7 @@ CYTHON_MIN_VERSION = '0.28.5'
 dependent_packages = {
     'numpy': (NUMPY_MIN_VERSION, 'build, install'),
     'scipy': (SCIPY_MIN_VERSION, 'build, install'),
+    'torch': (TORCH_MIN_VERSION, 'build, install'),
     'joblib': (JOBLIB_MIN_VERSION, 'install'),
     'threadpoolctl': (THREADPOOLCTL_MIN_VERSION, 'install'),
     'cython': (CYTHON_MIN_VERSION, 'build'),

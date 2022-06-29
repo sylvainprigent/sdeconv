@@ -9,8 +9,9 @@ from sdeconv.psfs import SPSFGibsonLanni
 import napari
 import time
 
-psf_generator = SPSFGibsonLanni((23, 128, 128), use_square=True)
+psf_generator = SPSFGibsonLanni((11, 128, 128), use_square=True)
 t = time.time()
+
 psf = psf_generator()
 elapsed = time.time() - t
 print('elapsed = ', elapsed)

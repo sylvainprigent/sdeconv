@@ -18,3 +18,16 @@ def test_psf_gaussian_2d(tmp_path):
     ref_psf = imread(os.path.join(root_dir, 'gaussian2d.tif'))
 
     np.testing.assert_almost_equal(psf.detach().cpu().numpy(), ref_psf, decimal=5)
+
+
+def test_psf_gaussian_3d(tmp_path):
+    """An example of how you might test your plugin."""
+
+    psf_generator = SPSFGaussian((0.5, 1.5, 1.5), (11, 15, 15))
+    psf = psf_generator()
+
+    root_dir = os.path.dirname(os.path.abspath(__file__))
+    # imsave(os.path.join(root_dir, 'gaussian3d.tif'), psf.detach().numpy())
+    ref_psf = imread(os.path.join(root_dir, 'gaussian3d.tif'))
+
+    np.testing.assert_almost_equal(psf.detach().cpu().numpy(), ref_psf, decimal=5)
