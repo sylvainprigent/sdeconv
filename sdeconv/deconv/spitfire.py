@@ -1,7 +1,7 @@
 import math
 import torch
 from .interface import SDeconvFilter
-from .utils import pad_2d, pad_3d
+from ._utils import pad_2d, pad_3d
 
 
 def hv_loss(img, weighting):

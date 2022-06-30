@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 from .interface import SDeconvFilter
-from .utils import pad_2d, pad_3d
+from ._utils import pad_2d, pad_3d
 from sdeconv.core import SSettings
 
 
@@ -109,6 +109,13 @@ metadata = {
             'label': 'Beta',
             'help': 'Regularisation parameter',
             'default': 1e-5,
+            'range': (0, 999999)
+        },
+        'pad': {
+            'type': int,
+            'label': 'Padding',
+            'help': 'Padding to avoid spectrum artifacts',
+            'default': 13,
             'range': (0, 999999)
         }
     }

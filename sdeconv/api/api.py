@@ -7,11 +7,10 @@ class SDeconvAPI:
     def __init__(self):
         self.psfs = SDeconvModuleFactory()
         self.filters = SDeconvModuleFactory()
-        discovered_modules = self._find_modules()
-        for name in discovered_modules('deconv'):
+        for name in self._find_modules('deconv'):
             mod = importlib.import_module(name)
             self.filters.register(mod.metadata['name'], mod.metadata)
-        for name in discovered_modules('psfs'):
+        for name in self._find_modules('psfs'):
             mod = importlib.import_module(name)
             self.psfs.register(mod.metadata['name'], mod.metadata)
 
@@ -24,27 +23,47 @@ class SDeconvAPI:
             path_ = os.path.join(path, parent)
             for x in os.listdir(path_):
                 if x.endswith(
-                        ".py") and 'interface' not in x and '__init__' not in x and not x.startswith(
+                        ".py") and 'setup' not in x and 'interface' not in x and '__init__' not in x and not x.startswith(
                         "_"):
                     modules.append(f"sdeconv.{parent}.{x.split('.')[0]}")
         return modules
 
-    def filter(self, name, **args):
-        if name == 'None':
-            return None
-        return self.filters.get(name, **args)
+    def filter(self, name, **kwargs):
+        """Instantiate a deconvolution filter
 
-    def psf(self, method_name, **args):
+        Parameters
+        ----------
+        name: str
+            Unique name of the filter to instantiate
+        kwargs: dict
+            arguments of the filter
+
+        """
         if name == 'None':
             return None
-        filter_ = self.psfs.get(method_name, **args)
+        return self.filters.get(name, **kwargs)
+
+    def psf(self, method_name, **kwargs):
+        """Instantiate a psf generator
+
+        Parameters
+        ----------
+        method_name: str
+            name of the PSF generator to instantiate
+        kwargs: dict
+            parameters of the PSF generator
+
+        """
+        if method_name == 'None':
+            return None
+        filter_ = self.psfs.get(method_name, **kwargs)
         if filter_.type == 'SPSFGenerator':
-            return filter_()
+            return filter_
         else:
             raise SDeconvFactoryError(f'The method {method_name} is not a PSF generator')
 
-    def generate_psf(self, method_name, **args):
-        generator = self.psf(method_name, **args)
+    def generate_psf(self, method_name, **kwargs):
+        generator = self.psf(method_name, **kwargs)
         return generator()
 
     def deconvolve(self, image, method_name, plane_by_plane, **args):

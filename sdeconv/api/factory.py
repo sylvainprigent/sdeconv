@@ -83,7 +83,6 @@ class SDeconvModuleBuilder:
 
     def _get_arg(self, param_metadata, key, args):
         type_ = param_metadata['type']
-        print('param metadata:', param_metadata)
         range_ = None
         if 'range' in param_metadata:
             range_ = param_metadata['range']
@@ -103,6 +102,8 @@ class SDeconvModuleBuilder:
             return self.get_arg_array(args, key, param_metadata['default'])
         elif type_ == 'select':
             return self.get_arg_select(args, key, param_metadata['values'])
+        elif type_ == 'zyx':
+            return self.get_arg_list(args, key, param_metadata['default'])
 
     @staticmethod
     def _error_message(key, value_type, value_range):
@@ -258,13 +259,36 @@ class SDeconvModuleBuilder:
         """
         value = default_value
         if isinstance(args, dict) and key in args:
-            print('psf type=', type(args[key]))
             if type(args[key]) is torch.Tensor:
                 value = args[key]
             elif type(args[key]) is np.array:
                 value = torch.Tensor(args[key])
             else:
                 raise SDeconvFactoryError(self._error_message(key, 'array', None))
+        return value
+
+    def get_arg_list(self, args, key, default_value):
+        """Get the value of a parameter from the args list
+
+        The default value of the parameter is returned if the
+        key is not in args
+
+        Parameters
+        ----------
+        args: dict
+            Dictionary of the input args
+        key: str
+            Name of the parameters
+        default_value: np.array
+            Default value of the parameter
+
+        """
+        value = default_value
+        if isinstance(args, dict) and key in args:
+            if type(args[key]) is list:
+                value = args[key]
+            else:
+                raise SDeconvFactoryError(self._error_message(key, 'list', None))
         return value
 
     def get_arg_select(self, args, key, values):

@@ -1,7 +1,7 @@
 import torch
 import torch.nn.functional as F
 from .interface import SDeconvFilter
-from .utils import pad_2d, pad_3d
+from ._utils import pad_2d, pad_3d
 
 
 class SRichardsonLucy(SDeconvFilter):

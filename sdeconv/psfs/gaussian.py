@@ -58,3 +58,24 @@ class SPSFGaussian(SPSFGenerator):
         else:
             raise Exception('PSFGaussian: can generate only 2D or 3D PSFs')
         return self.psf_
+
+
+metadata = {
+    'name': 'SPSFGaussian',
+    'label': 'Gaussian PSF',
+    'class': SPSFGaussian,
+    'parameters': {
+        'sigma': {
+            'type': 'zyx',
+            'label': 'Sigma',
+            'help': 'Gaussian standard deviation in each direction',
+            'default': [1.5, 1.5, 0]
+        },
+        'shape': {
+            'type': 'zyx',
+            'label': 'Size',
+            'help': 'Regularisation parameter',
+            'default': [128, 128, 1]
+        }
+    }
+}
