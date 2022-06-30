@@ -18,6 +18,7 @@ def configuration(parent_package='', top_path=None):
     config = Configuration('sdeconv', parent_package, top_path)
 
     # submodules with build utilities
+    config.add_subpackage('__check_build')
     config.add_subpackage('_build_utils')
 
     # submodules which have their own setup.py

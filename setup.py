@@ -28,7 +28,7 @@ builtins.__sdeconv_SETUP__ = True
 
 DISTNAME = 'sdeconv'
 DESCRIPTION = 'Library for 3D scientific image deconvolution'
-with open('README.md') as f:
+with open('README.rst') as f:
     LONG_DESCRIPTION = f.read()
 MAINTAINER = 'Sylvain Prigent'
 MAINTAINER_EMAIL = 'meriadec.prigent@gmail.com'
@@ -260,9 +260,9 @@ def setup_package():
 
         metadata['version'] = VERSION
     else:
-        if sys.version_info < (3, 6):
+        if sys.version_info < (3, 8):
             raise RuntimeError(
-                "sdeconv requires Python 3.6 or later. The current"
+                "sdeconv requires Python 3.8 or later. The current"
                 " Python version is %s installed in %s."
                 % (platform.python_version(), sys.executable))
 
