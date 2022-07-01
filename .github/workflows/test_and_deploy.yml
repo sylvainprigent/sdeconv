@@ -68,7 +68,7 @@ jobs:
           sudo $CONDA/bin/python -m pip install --upgrade pip
           sudo $CONDA/bin/pip install setuptools tox numpy scipy cython tox-gh-actions 
           sudo $CONDA/bin/python setup.py build_ext --inplace  
-          $CONDA/bin/tox
+          $CONDA/bin/pytest .
       - name: Build and test Linux
         if: runner.os == 'Linux' 
         run: |
@@ -79,7 +79,7 @@ jobs:
           $CONDA/bin/python -m pip install --upgrade pip
           $CONDA/bin/pip install setuptools tox numpy scipy cython tox-gh-actions 
           $CONDA/bin/python setup.py build_ext --inplace    
-          $CONDA/bin/tox   
+          $CONDA/bin/pytest .
 
       - name: Coverage
         uses: codecov/codecov-action@v1
