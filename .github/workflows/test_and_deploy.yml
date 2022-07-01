@@ -55,7 +55,7 @@ jobs:
           copy C:\Miniconda\Library\include\fftw3.h C:\Miniconda\include\fftw3.h
           copy C:\Miniconda\Library\lib\fftw3f.lib C:\Miniconda\libs\fftw3f.lib 
           C:\Miniconda\python.exe -m pip install --upgrade pip
-          C:\Miniconda\python.exe -m pip install setuptools numpy scipy cython
+          C:\Miniconda\python.exe -m pip install setuptools numpy torch scipy cython
           C:\Miniconda\python.exe setup.py build_ext --inplace
           dir D:\a\sdeconv\sdeconv\sdeconv\deconv\wrappers
       - name: Build and test macOS
@@ -66,7 +66,7 @@ jobs:
           sudo $CONDA/bin/activate myenv
           sudo conda install --yes -c conda-forge fftw
           sudo $CONDA/bin/python -m pip install --upgrade pip
-          sudo $CONDA/bin/pip install setuptools pytest numpy scipy cython tox-gh-actions
+          sudo $CONDA/bin/pip install setuptools pytest numpy torch scipy cython tox-gh-actions
           sudo $CONDA/bin/python setup.py build_ext --inplace  
           $CONDA/bin/pytest .
       - name: Build and test Linux
@@ -77,7 +77,7 @@ jobs:
           $CONDA/bin/activate myenv
           conda install --yes -c conda-forge fftw
           $CONDA/bin/python -m pip install --upgrade pip
-          $CONDA/bin/pip install setuptools pytest numpy scipy cython tox-gh-actions
+          $CONDA/bin/pip install setuptools pytest numpy scipy torch cython tox-gh-actions
           $CONDA/bin/python setup.py build_ext --inplace    
           $CONDA/bin/pytest .
 
