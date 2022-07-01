@@ -18,10 +18,11 @@ First we load the images:
 
     image = data.celegans()
 
+
 Deconvolution using the API
 ---------------------------
 
-.. code-clock:: python3
+.. code-block:: python3
 
     from sdeconv import data
     from sdeconv.api import SDeconvAPI
@@ -34,16 +35,16 @@ Deconvolution using the API
     image = data.celegans()
 
     # Generate a PSF
-    psf = api.psf('SPSFGaussian', sigma=1.5)
+    psf = api.generate_psf('SPSFGaussian', sigma=[1.5, 1.5], shape=[13, 13])
 
     # deconvolution with API
-    image_decon = api.deconvolve(image, "wiener", plane_by_plane=False, psf=psf, beta=0.005, pad=13)
+    image_decon = api.deconvolve(image, "SWiener", plane_by_plane=False, psf=psf, beta=0.005, pad=13)
 
     # plot the result
     plt.figure()
     plt.subplot(131)
     plt.title('Original')
-    plt.imshow(image.detach().cpu().numpy()[0, ...], cmap='gray')
+    plt.imshow(image.detach().cpu().numpy(), cmap='gray')
     plt.axis('off')
 
     plt.subplot(132)
@@ -62,80 +63,35 @@ Deconvolution using the API
 Deconvolution using the library classes
 ---------------------------------------
 
-Particles detections
---------------------
-The first step of particle tracking is to detect individual particles frame by frame.
-**STracking** provides ``SDetector`` interface for particles detector. In this example we detect particles with the
-*Difference of Gaussians* detector:
-
 .. code-block:: python3
 
-    from stracking.detectors import DoGDetector
+    import matplotlib.pyplot as plt
+    from sdeconv.data import celegans
+    from sdeconv.psfs import SPSFGaussian
+    from sdeconv.deconv import SWiener
 
-    detector = DoGDetector(min_sigma=4, max_sigma=5, threshold=0.2)
-    particles = detector.run(image)
+    # load a 2D sample
+    image = celegans()
 
+    # Generate a 2D PSF
+    psf_generator = SPSFGaussian((1.5, 1.5), (13, 13))
+    psf = psf_generator()
 
-The output ```articles`` is an instance of the ``SParticles`` container. It contains the list of particles as a numpy
-array, the properties of the particles as a *dict* and the image scale as a *tuple*
+    # apply Wiener filter
+    wiener = SWiener(psf, beta=0.005, pad=13)
+    out_image = wiener(image)
 
-Particles linking
------------------
-The second step is linking the particles to create tracks.
-**STracking** provides ``SLinker`` interface to implement mulitple linking algorithms. In this quick start, we use the
-*Shorted path* graph based linker, using the Euclidean distance between particles as a link cost function:
+    # display results
+    plt.figure()
+    plt.title('PSF')
+    plt.imshow(psf.detach().numpy(), cmap='gray')
 
-.. code-block:: python3
+    plt.figure()
+    plt.title('C. elegans original')
+    plt.imshow(image.detach().numpy(), cmap='gray')
 
-    from stracking.linkers import SPLinker, EuclideanCost
+    plt.figure()
+    plt.title('C. elegans Wiener')
+    plt.imshow(out_image.detach().numpy(), cmap='gray')
 
-    euclidean_cost = EuclideanCost(max_cost=3000)
-    my_tracker = SPLinker(cost=euclidean_cost, gap=1)
-    tracks = my_tracker.run(particles)
-
-
-The output ``tracks`` in an instance of the ``STracks`` container. It contains the list of tracks as a numpy array and
-all the tracks metadata in dictionaries.
-
-The next steps show the usage of ``SProperty``, ``SFeature`` and ``SFilter`` to analyse the trajectories
-
-Particles properties
---------------------
-The tracks properties module allows to calculate properties of the particles. This quickstart example
-shows how to calculate the intensity properties of particles:
-
-.. code-block:: python3
-
-    from stracking.properties import IntensityProperty
-
-    property_calc = IntensityProperty(radius=2)
-    property_calc.run(particles, image)
-
-All the calculated properties are saved in the properties attribute of the ``SParticles`` container.
-
-Tracks features
----------------
-The tracks features module allows to calculate features of tracks like length and distance. This quickstart example shows how
-to calculate the distance of tracks:
-
-.. code-block:: python3
-
-    from stracking.features import DistanceFeature
-
-    feature_calc = DistanceFeature()
-    feature_calc.run(tracks)
-
-The calculated features are stored in the ``features`` attribute of the ``STracks`` container.
-
-Tracks filter
--------------
-The last part is the filter module. It allows to extract a subset of tracks base on a defined criterion. In this example, we select the tracks that move less that a distance of 60 pixels:
-
-.. code-block:: python3
-
-    from stracking.filters import FeatureFilter
-
-    filter = FeatureFilter(feature_name='distance', min_val=0, max_val=60)
-    filtered_tracks = filter.run(tracks)
-
-Filtered set of tracks are return as a ``STracks`` object.
+    plt.show()
