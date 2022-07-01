@@ -51,20 +51,15 @@ jobs:
           C:\Miniconda\condabin\conda.bat init powershell
           C:\Miniconda\condabin\conda.bat create -n myenv python=${{ matrix.python-version }}
           C:\Miniconda\condabin\conda.bat activate myenv
-          C:\Miniconda\condabin\conda.bat install --yes -c conda-forge fftw
-          copy C:\Miniconda\Library\include\fftw3.h C:\Miniconda\include\fftw3.h
-          copy C:\Miniconda\Library\lib\fftw3f.lib C:\Miniconda\libs\fftw3f.lib 
           C:\Miniconda\python.exe -m pip install --upgrade pip
           C:\Miniconda\python.exe -m pip install setuptools numpy torch torchvision scikit-image scipy cython
           C:\Miniconda\python.exe setup.py build_ext --inplace
-          dir D:\a\sdeconv\sdeconv\sdeconv\deconv\wrappers
       - name: Build and test macOS
         if: runner.os == 'macOS' 
         run: |
           sudo conda init bash
           sudo conda create -n myenv python=${{ matrix.python-version }}
           sudo $CONDA/bin/activate myenv
-          sudo conda install --yes -c conda-forge fftw
           sudo $CONDA/bin/python -m pip install --upgrade pip
           sudo $CONDA/bin/pip install setuptools pytest numpy torch torchvision scikit-image scipy cython tox-gh-actions
           sudo $CONDA/bin/python setup.py build_ext --inplace  
@@ -75,7 +70,6 @@ jobs:
           conda init bash
           conda create -n myenv python=${{ matrix.python-version }}
           $CONDA/bin/activate myenv
-          conda install --yes -c conda-forge fftw
           $CONDA/bin/python -m pip install --upgrade pip
           $CONDA/bin/pip install setuptools pytest numpy scipy torch torchvision scikit-image cython tox-gh-actions
           $CONDA/bin/python setup.py build_ext --inplace    
@@ -109,11 +103,10 @@ jobs:
           C:\Miniconda\condabin\conda.bat init powershell
           C:\Miniconda\condabin\conda.bat create -n myenv python=${{ matrix.python-version }}
           C:\Miniconda\condabin\conda.bat activate myenv
-          C:\Miniconda\condabin\conda.bat install --yes -c conda-forge fftw
           copy C:\Miniconda\Library\include\fftw3.h C:\Miniconda\include\fftw3.h
           copy C:\Miniconda\Library\lib\fftw3f.lib C:\Miniconda\libs\fftw3f.lib 
           C:\Miniconda\python.exe -m pip install --upgrade pip
-          C:\Miniconda\python.exe -m pip install setuptools numpy scipy cython wheel twine
+          C:\Miniconda\python.exe -m pip install setuptools numpy scipy torch torchvision scikit-image cython wheel twine
           C:\Miniconda\python.exe setup.py bdist_wheel
           C:\Miniconda\python.exe -m twine upload -u __token__ -p ${{ secrets.TWINE_API_KEY }} dist\*   
       - name: Build and publish macosx
@@ -125,8 +118,7 @@ jobs:
           sudo conda init bash
           sudo conda create -n myenv python=3.8
           sudo $CONDA/bin/activate myenv
-          sudo conda install --yes -c conda-forge fftw
           sudo $CONDA/bin/python -m pip install --upgrade pip
-          sudo $CONDA/bin/pip install setuptools numpy scipy cython wheel twine
+          sudo $CONDA/bin/pip install setuptools numpy scipy torch torchvision scikit-image cython wheel twine
           sudo $CONDA/bin/python setup.py bdist_wheel  
           sudo $CONDA/bin/python -m twine upload -u __token__ -p ${{ secrets.TWINE_API_KEY }} dist/*    
