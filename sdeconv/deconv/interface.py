@@ -2,7 +2,7 @@
 
 Classes
 -------
-SAiryscanRegistration
+SDeconvFilter
 
 """
 

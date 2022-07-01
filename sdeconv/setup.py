@@ -1,5 +1,7 @@
+"""Setup the SDeconv submodule"""
 import sys
 import os
+from numpy.distutils.misc_util import Configuration
 
 from sdeconv._build_utils import cythonize_extensions
 
@@ -8,9 +10,16 @@ __version__ = '1.0.0'
 
 
 def configuration(parent_package='', top_path=None):
-    from numpy.distutils.misc_util import Configuration
-    import numpy
+    """Submodule configuration
 
+    Parameters
+    ----------
+    parent_package: str
+        Name of the parent package
+    top_path: str
+        Path of the top module
+
+    """
     libraries = []
     if os.name == 'posix':
         libraries.append('m')

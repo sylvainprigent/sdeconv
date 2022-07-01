@@ -1,7 +1,10 @@
+"""Module that provides sample images"""
+
 import os.path as osp
 import os
 import numpy as np
 import torch
+from skimage.io import imread
 from sdeconv.core import SSettings
 
 
@@ -33,25 +36,21 @@ def _fetch(data_filename):
 
     if os.path.isfile(filepath):
         return filepath
-    else:
-        raise FileExistsError("Cannot find the file:", filepath)    
+    raise FileExistsError("Cannot find the file:", filepath)
 
 
-def _load(f):
+def _load(filename):
     """Load an image file located in the data directory.
     Parameters
     ----------
-    f : string
+    filename : string
         File name.
     Returns
     -------
     img : ndarray
         Image loaded from ``simglibpy.data_dir``.
     """
-    # importing io is quite slow since it scans all the backends
-    # we lazy import it here
-    from skimage.io import imread
-    return torch.tensor(np.float32(imread(_fetch(f)))).to(SSettings.instance().device)
+    return torch.tensor(np.float32(imread(_fetch(filename)))).to(SSettings.instance().device)
 
 
 def celegans():

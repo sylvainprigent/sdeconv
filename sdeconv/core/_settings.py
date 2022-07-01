@@ -1,3 +1,11 @@
+"""Implements setting management
+
+Classes
+-------
+SSettingsContainer
+SSettings
+
+"""
 import torch
 
 
@@ -6,10 +14,17 @@ class SSettingsContainer:
     def __init__(self):
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+    def get_device(self):
+        """Returns the device name for torch"""
+        return self.device
+
+    def print(self):
+        """Display the settings in the console"""
+        print(f'SDeconv settings: device={self.device}')
+
 
 class SSettings:
     """Singleton to access the Settings container
-        
     Raises
     ------
     Exception: if multiple instantiation of the Settings container is tried
@@ -21,8 +36,7 @@ class SSettings:
         """ Virtually private constructor. """
         if SSettings.__instance is not None:
             raise Exception("Settings container can be initialized only once!")
-        else:
-            SSettings.__instance = SSettingsContainer()
+        SSettings.__instance = SSettingsContainer()
 
     @staticmethod
     def instance():
@@ -30,3 +44,8 @@ class SSettings:
         if SSettings.__instance is None:
             SSettings.__instance = SSettingsContainer()
         return SSettings.__instance
+
+    @staticmethod
+    def print():
+        """Print the settings to the console"""
+        SSettings.instance().print()

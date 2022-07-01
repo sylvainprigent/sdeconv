@@ -1,16 +1,15 @@
+"""Unit testing the Spitfire deconvolution implementation"""
 import os
 import numpy as np
-from skimage.io import imread, imsave
-import torch
+from skimage.io import imread
 
 from sdeconv.data import celegans, pollen_poison_noise_blurred, pollen_psf
 from sdeconv.deconv import Spitfire
 from sdeconv.psfs import SPSFGaussian
 
 
-# tmp_path is a pytest fixture
-def test_spitfire_2d(tmp_path):
-
+def test_spitfire_2d():
+    """Unit testing Spitfire 2D deconvolution"""
     root_dir = os.path.dirname(os.path.abspath(__file__))
     image = celegans()
 
@@ -26,8 +25,8 @@ def test_spitfire_2d(tmp_path):
     np.testing.assert_almost_equal(out_image.detach().cpu().numpy()/10, ref_image/10, decimal=0)
 
 
-def test_spitfire_3d(tmp_path):
-
+def test_spitfire_3d():
+    """Unit testing Spitfire 3D deconvolution"""
     root_dir = os.path.dirname(os.path.abspath(__file__))
     image = pollen_poison_noise_blurred()
     psf = pollen_psf()

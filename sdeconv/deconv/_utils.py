@@ -1,8 +1,23 @@
+"""Implementation of shared methods for all multiple deconvolution algorithms"""
 import torch
 from sdeconv.core import SSettings
 
 
 def resize_psf_2d(image, psf):
+    """Resize a 2D PSF image to the target image size
+
+    Parameters
+    ----------
+    image: torch.Tensor
+        Reference image tensor
+    psf: torch.Tensor
+        Point Spread Function tensor to resize
+
+    Returns
+    -------
+    the psf tensor padded to get the same shape as image
+
+    """
     kernel = torch.zeros(image.shape).to(SSettings.instance().device)
     x_start = int(image.shape[0] / 2 - psf.shape[0] / 2) + 1
     y_start = int(image.shape[1] / 2 - psf.shape[1] / 2) + 1
@@ -11,6 +26,20 @@ def resize_psf_2d(image, psf):
 
 
 def resize_psf_3d(image, psf):
+    """Resize a 3D PSF image to the target image size
+
+    Parameters
+    ----------
+    image: torch.Tensor
+        Reference image tensor
+    psf: torch.Tensor
+        Point Spread Function tensor to resize
+
+    Returns
+    -------
+    the psf tensor padded to get the same shape as image
+
+    """
     kernel = torch.zeros(image.shape).to(SSettings.instance().device)
     x_start = int(image.shape[0] / 2 - psf.shape[0] / 2) + 1
     y_start = int(image.shape[1] / 2 - psf.shape[1] / 2) + 1
@@ -38,9 +67,9 @@ def pad_2d(image, psf, pad):
 
     """
     padding = pad
-    if type(pad) is tuple and len(pad) != image.ndim:
+    if isinstance(pad, tuple) and len(pad) != image.ndim:
         raise Exception("Padding must be the same dimension as image")
-    elif type(pad) is int:
+    if isinstance(pad, int):
         if pad == 0:
             return image, psf, (0, 0)
         padding = (pad, pad)
@@ -48,8 +77,8 @@ def pad_2d(image, psf, pad):
     if padding[0] > 0 and padding[1] > 0:
 
         pad_fn = torch.nn.ReflectionPad2d((padding[0], padding[0], padding[1], padding[1]))
-        image_pad = pad_fn(image.detach().clone().to(SSettings.instance().device).view(1, 1, image.shape[0],
-                                                       image.shape[1])).view(
+        image_pad = pad_fn(image.detach().clone().to(
+            SSettings.instance().device).view(1, 1, image.shape[0], image.shape[1])).view(
             (image.shape[0] + 2 * padding[0], image.shape[1] + 2 * padding[0]))
     else:
         image_pad = image.detach().clone().to(SSettings.instance().device)
@@ -75,9 +104,9 @@ def pad_3d(image, psf, pad):
 
     """
     padding = pad
-    if type(pad) is tuple and len(pad) != image.ndim:
+    if isinstance(pad, tuple) and len(pad) != image.ndim:
         raise Exception("Padding must be the same dimension as image")
-    elif type(pad) is int:
+    if isinstance(pad, int):
         if pad == 0:
             return image, psf, (0, 0, 0)
         padding = (pad, pad, pad)
@@ -86,10 +115,42 @@ def pad_3d(image, psf, pad):
         p3d = (padding[2], padding[2], padding[1], padding[1], padding[0], padding[0])
         pad_fn = torch.nn.ReflectionPad3d(p3d)
         image_pad = pad_fn(
-            image.detach().clone().to(SSettings.instance().device).view(1, 1, image.shape[0], image.shape[1], image.shape[2])).view(
-            (image.shape[0] + 2 * padding[0], image.shape[1] + 2 * padding[1], image.shape[2] + 2 * padding[2]))
+            image.detach().clone().to(SSettings.instance().device).view(1, 1, image.shape[0],
+                                                                        image.shape[1],
+                                                                        image.shape[2])).view(
+            (image.shape[0] + 2 * padding[0], image.shape[1] + 2 * padding[1],
+             image.shape[2] + 2 * padding[2]))
         psf_pad = torch.nn.functional.pad(psf, p3d, "constant", 0)
     else:
         image_pad = image
         psf_pad = psf
     return image_pad, psf_pad, padding
+
+
+def unpad_3d(image, padding):
+    """Remove the padding of an image
+
+    Parameters
+    ----------
+    image: torch.Tensor
+        3D image to unpad
+    padding: list
+        Padding in each dimension
+
+    Returns
+    -------
+    a torch.Tensor of the unpadded image
+
+    """
+    return image[padding[0]:-padding[0],
+                 padding[1]:-padding[1],
+                 padding[2]:-padding[2]]
+
+
+# define the PSF parameter
+psf_parameter = {
+    'type': torch.Tensor,
+    'label': 'psf',
+    'help': 'Point Spread Function',
+    'default': None
+}

@@ -1,13 +1,22 @@
+"""Setup the Point Spred Function module. This modules uses Cython"""
+
 import os
-from os.path import join
 import numpy
+from numpy.distutils.misc_util import Configuration
 
 
 def configuration(parent_package='', top_path=None):
-    from numpy.distutils.misc_util import Configuration
+    """Submodule configuration
 
+    Parameters
+    ----------
+    parent_package: str
+        Name of the parent package
+    top_path: str
+        Path of the top module
+
+    """
     wrappers_dir = os.path.dirname(os.path.abspath(__file__))
-    print('############ wrappers dir=', wrappers_dir)
     config = Configuration('wrappers', parent_package, top_path)
 
     libraries = []

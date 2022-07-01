@@ -1,3 +1,12 @@
+"""Module that implements the observer/observable design pattern to display progress
+
+Classes
+-------
+SObservable
+SObserver
+
+"""
+
 
 class SObservable:
     """Interface for data processing class
@@ -6,7 +15,7 @@ class SObservable:
 
     """
     def __init__(self):
-        self._observers = list()
+        self._observers = []
 
     def add_observer(self, observer):
         """Add an observer
@@ -78,9 +87,6 @@ class SObserver:
 
 class SObserverConsole(SObserver):
     """print message and progress to console"""
-    def __init__(self):
-        super().__init__()
-        pass
 
     def notify(self, message):
         print(message)

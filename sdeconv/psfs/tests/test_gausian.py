@@ -1,14 +1,14 @@
+"""Unit testing for Gaussian PSFs"""
+
 import os
 import numpy as np
-from skimage.io import imread, imsave
-import torch
+from skimage.io import imread
 
 from sdeconv.psfs.gaussian import SPSFGaussian
 
 
-# tmp_path is a pytest fixture
-def test_psf_gaussian_2d(tmp_path):
-    """An example of how you might test your plugin."""
+def test_psf_gaussian_2d():
+    """Unit testing the 2D Gaussian PSF generator"""
 
     psf_generator = SPSFGaussian((1.5, 1.5), (15, 15))
     psf = psf_generator()
@@ -20,8 +20,8 @@ def test_psf_gaussian_2d(tmp_path):
     np.testing.assert_almost_equal(psf.detach().cpu().numpy(), ref_psf, decimal=5)
 
 
-def test_psf_gaussian_3d(tmp_path):
-    """An example of how you might test your plugin."""
+def test_psf_gaussian_3d():
+    """Unit testing the 3D Gaussian PSF generator"""
 
     psf_generator = SPSFGaussian((0.5, 1.5, 1.5), (11, 15, 15))
     psf = psf_generator()

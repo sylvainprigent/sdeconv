@@ -1,7 +1,7 @@
-import math
+"""Implements the Spitfire deconvolution algorithms for 2D and 3D images"""
 import torch
 from .interface import SDeconvFilter
-from ._utils import pad_2d, pad_3d
+from ._utils import pad_2d, pad_3d, unpad_3d, psf_parameter
 
 
 def hv_loss(img, weighting):
@@ -15,14 +15,13 @@ def hv_loss(img, weighting):
         Sparse weighting parameter in [0, 1]. 0 sparse, and 1 not sparse
 
     """
-    a, b, h, w = img.size()
     dxx2 = torch.square(-img[:, :, 2:, 1:-1] + 2 * img[:, :, 1:-1, 1:-1] - img[:, :, :-2, 1:-1])
     dyy2 = torch.square(-img[:, :, 1:-1, 2:] + 2 * img[:, :, 1:-1, 1:-1] - img[:, :, 1:-1, :-2])
     dxy2 = torch.square(img[:, :, 2:, 2:] - img[:, :, 2:, 1:-1] - img[:, :, 1:-1, 2:] +
                         img[:, :, 1:-1, 1:-1])
-    hv = torch.sqrt(weighting * weighting * (dxx2 + dyy2 + 2 * dxy2) +
-                    (1 - weighting) * (1 - weighting) * torch.square(img[:, :, 1:-1, 1:-1])).sum()
-    return hv / (a * b * h * w)
+    h_v = torch.sqrt(weighting * weighting * (dxx2 + dyy2 + 2 * dxy2) +
+                     (1 - weighting) * (1 - weighting) * torch.square(img[:, :, 1:-1, 1:-1]))
+    return torch.mean(h_v)
 
 
 def hv_loss_3d(img, delta, weighting):
@@ -43,14 +42,16 @@ def hv_loss_3d(img, delta, weighting):
     d22 = -img[:, :, 1:-1, 2:, 1:-1] + 2*img_ - img[:, :, 1:-1, :-2, 1:-1]
     d33 = delta*delta*(-img[:, :, 2:, 1:-1, 1:-1] + 2*img_ - img[:, :, :-2, 1:-1, 1:-1])
     d12_d21 = img[:, :, 1:-1, 2:, 2:] - img[:, :, 1:-1, 1:-1, 2:] - img[:, :, 1:-1, 2:, 1:-1] + img_
-    d13_d31 = delta*(img[:, :, 2:, 1:-1, 2:] - img[:, :, 1:-1, 1:-1, 2:] - img[:, :, 2:, 1:-1, 1:-1] + img_)
-    d23_d32 = delta*(img[:, :, 2:, 2:, 1:-1] - img[:, :, 1:-1, 2:, 1:-1] - img[:, :, 2:, 1:-1, 1:-1] + img_)
+    d13_d31 = delta*(img[:, :, 2:, 1:-1, 2:] - img[:, :, 1:-1, 1:-1, 2:]
+                     - img[:, :, 2:, 1:-1, 1:-1] + img_)
+    d23_d32 = delta*(img[:, :, 2:, 2:, 1:-1] - img[:, :, 1:-1, 2:, 1:-1]
+                     - img[:, :, 2:, 1:-1, 1:-1] + img_)
 
-    hv = torch.square(weighting*d11) + torch.square(weighting*d22) + torch.square(
+    h_v = torch.square(weighting*d11) + torch.square(weighting*d22) + torch.square(
         weighting*d33) + 2 * torch.square(weighting*d12_d21) + 2 * torch.square(
         weighting*d13_d31) + 2 * torch.square(weighting*d23_d32) + torch.square((1-weighting)*img_)
 
-    return torch.mean(torch.sqrt(hv))
+    return torch.mean(torch.sqrt(h_v))
 
 
 def dataterm_deconv(blurry_image, deblurred_image, psf):
@@ -84,7 +85,8 @@ class DataTermDeconv3D(torch.autograd.Function):
     @staticmethod
     def forward(ctx, deblurred_image, blurry_image, fft_blurry_image, fft_psf, adjoint_otf):
         fft_deblurred_image = torch.fft.fftn(deblurred_image)
-        ctx.save_for_backward(deblurred_image, fft_deblurred_image, fft_blurry_image, fft_psf, adjoint_otf)
+        ctx.save_for_backward(deblurred_image, fft_deblurred_image, fft_blurry_image, fft_psf,
+                              adjoint_otf)
 
         conv_deblured_image = torch.real(torch.fft.ifftn(fft_deblurred_image * fft_psf))
         mse = torch.nn.MSELoss()
@@ -92,16 +94,20 @@ class DataTermDeconv3D(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, grad_output):
-        deblurred_image, fft_deblurred_image, fft_blurry_image, fft_psf, adjoint_otf = ctx.saved_tensors
+        deblurred_image, fft_deblurred_image, fft_blurry_image, \
+        fft_psf, adjoint_otf = ctx.saved_tensors
 
-        real_tmp = fft_psf.real * fft_deblurred_image.real - fft_psf.imag * fft_deblurred_image.imag - fft_blurry_image.real
-        imag_tmp = fft_psf.real * fft_deblurred_image.imag + fft_psf.imag * fft_deblurred_image.real - fft_blurry_image.imag
+        real_tmp = fft_psf.real * fft_deblurred_image.real - \
+                   fft_psf.imag * fft_deblurred_image.imag - fft_blurry_image.real
+        imag_tmp = fft_psf.real * fft_deblurred_image.imag + \
+                   fft_psf.imag * fft_deblurred_image.real - fft_blurry_image.imag
 
         residue_image_real = adjoint_otf.real * real_tmp - adjoint_otf.imag * imag_tmp
         residue_image_imag = adjoint_otf.real * imag_tmp + adjoint_otf.imag * real_tmp
 
-        a, b, z, h, w = deblurred_image.size()
-        grad_ = torch.real(torch.fft.ifftn(torch.complex(residue_image_real, residue_image_imag))) /(a*b*z*h*w)
+        grad_ = torch.real(torch.fft.ifftn(
+                           torch.complex(residue_image_real,
+                                         residue_image_imag))) / torch.numel(deblurred_image)
         return grad_output * grad_, None, None, None, None
 
 
@@ -143,10 +149,23 @@ class Spitfire(SDeconvFilter):
     def __call__(self, image):
         if image.ndim == 2:
             return self.run_2d(image)
-        elif image.ndim == 3:
+        if image.ndim == 3:
             return self.run_3d(image)
+        raise Exception("Spitfire can process only 2D or 3D tensors")
 
     def run_2d(self, image):
+        """Implements Spitfire for 2D images
+
+        Parameters
+        ----------
+        image: torch.Tensor
+            Blurry 2D image tensor
+
+        Returns
+        -------
+        Deblurred image (2D torch.Tensor)
+
+        """
         self.progress(0)
         mini = torch.min(image)
         maxi = torch.max(image)
@@ -187,10 +206,66 @@ class Spitfire(SDeconvFilter):
         deconv_image = deconv_image.view(deconv_image.shape[2], deconv_image.shape[3])
         if image_pad.shape[2] != image.shape[0] and image_pad.shape[3] != image.shape[1]:
             return deconv_image[padding[0]: -padding[0], padding[1]: -padding[1]]
-        else:
-            return deconv_image
+        return deconv_image
+
+    @staticmethod
+    def otf_3d(psf):
+        """Calculate the OTF of a PSF
+
+        Parameters
+        ----------
+        psf: torch.Tensor
+            3D Point Spread Function
+
+        Returns
+        -------
+        the OTF in a torch.Tensor 3D
+
+        """
+        psf_roll = torch.roll(psf, int(-psf.shape[0] / 2), dims=0)
+        psf_roll = torch.roll(psf_roll, int(-psf.shape[1] / 2), dims=1)
+        psf_roll = torch.roll(psf_roll, int(-psf.shape[2] / 2), dims=2)
+        psf_roll.view(1, psf.shape[0], psf.shape[1], psf.shape[2])
+        fft_psf = torch.fft.fftn(psf_roll)
+        return fft_psf
+
+    @staticmethod
+    def adjoint_otf(psf):
+        """Calculate the adjoint OTF of a PSF
+
+        Parameters
+        ----------
+        psf: torch.Tensor
+            3D Point Spread Function
+
+        Returns
+        -------
+        the OTF in a torch.Tensor 3D
+
+        """
+        adjoint_psf = torch.flip(psf, [0, 1, 2])
+        adjoint_psf = torch.roll(adjoint_psf, -int(psf.shape[0] - 1) % 2, dims=0)
+        adjoint_psf = torch.roll(adjoint_psf, -int(psf.shape[1] - 1) % 2, dims=1)
+        adjoint_psf = torch.roll(adjoint_psf, -int(psf.shape[2] - 1) % 2, dims=2)
+
+        adjoint_psf = torch.roll(adjoint_psf, int(-psf.shape[0] / 2), dims=0)
+        adjoint_psf = torch.roll(adjoint_psf, int(-psf.shape[1] / 2), dims=1)
+        adjoint_psf = torch.roll(adjoint_psf, int(-psf.shape[2] / 2), dims=2)
+        return torch.fft.fftn(adjoint_psf)
 
     def run_3d(self, image):
+        """Implements Spitfire for 3D images
+
+        Parameters
+        ----------
+        image: torch.Tensor
+            Blurry 3D image tensor
+
+        Returns
+        -------
+        Deblurred image (3D torch.Tensor)
+
+        """
         self.progress(0)
         mini = torch.min(image)
         maxi = torch.max(image)
@@ -199,7 +274,8 @@ class Spitfire(SDeconvFilter):
 
         deconv_image = image_pad.detach().clone()
         image_pad = image_pad.view(1, 1, image_pad.shape[0], image_pad.shape[1], image_pad.shape[2])
-        deconv_image = deconv_image.view(1, 1, deconv_image.shape[0], deconv_image.shape[1], deconv_image.shape[2])
+        deconv_image = deconv_image.view(1, 1, deconv_image.shape[0],
+                                         deconv_image.shape[1], deconv_image.shape[2])
         deconv_image.requires_grad = True
         optimizer = torch.optim.Adam([deconv_image], lr=self.gradient_step_)
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.5)
@@ -207,30 +283,16 @@ class Spitfire(SDeconvFilter):
         count_eq = 0
         self.niter_ = 0
 
-        psf_roll = torch.roll(psf_pad, int(-psf_pad.shape[0] / 2), dims=0)
-        psf_roll = torch.roll(psf_roll, int(-psf_pad.shape[1] / 2), dims=1)
-        psf_roll = torch.roll(psf_roll, int(-psf_pad.shape[2] / 2), dims=2)
-        psf_roll.view(1, psf_pad.shape[0], psf_pad.shape[1], psf_pad.shape[2])
-        fft_psf = torch.fft.fftn(psf_roll)
-
-        adjoint_psf = torch.flip(psf_pad, [0, 1, 2])
-        adjoint_psf = torch.roll(adjoint_psf, -int(psf_pad.shape[0] - 1) % 2, dims=0)
-        adjoint_psf = torch.roll(adjoint_psf, -int(psf_pad.shape[1] - 1) % 2, dims=1)
-        adjoint_psf = torch.roll(adjoint_psf, -int(psf_pad.shape[2] - 1) % 2, dims=2)
-
-        adjoint_psf = torch.roll(adjoint_psf, int(-psf_pad.shape[0] / 2), dims=0)
-        adjoint_psf = torch.roll(adjoint_psf, int(-psf_pad.shape[1] / 2), dims=1)
-        adjoint_psf = torch.roll(adjoint_psf, int(-psf_pad.shape[2] / 2), dims=2)
-        adjoint_otf = torch.fft.fftn(adjoint_psf)
-
+        fft_psf = Spitfire.otf_3d(psf_pad)
+        adjoint_otf = Spitfire.adjoint_otf(psf_pad)
         fft_image = torch.fft.fftn(image_pad)
-
         dataterm_ = DataTermDeconv3D.apply
         for i in range(self.max_iter_):
             self.progress(int(100*i/self.max_iter_))
             self.niter_ += 1
             optimizer.zero_grad()
-            loss = self.reg * dataterm_(deconv_image, image_pad, fft_image, fft_psf, adjoint_otf) + (
+            loss = self.reg * dataterm_(deconv_image, image_pad,
+                                        fft_image, fft_psf, adjoint_otf) + (
                         1 - self.reg) * hv_loss_3d(deconv_image, self.delta, self.weight)
             print('iter:', self.niter_, ' loss:', loss.item())
             if loss > previous_loss:
@@ -253,11 +315,8 @@ class Spitfire(SDeconvFilter):
         deconv_image = (maxi-mini)*deconv_image + mini
         if image_pad.shape[2] != image.shape[0] and image_pad.shape[3] != image.shape[1] and \
                 image_pad.shape[4] != image.shape[2]:
-            return deconv_image[padding[0]: -padding[0],
-                                padding[1]: -padding[1],
-                                padding[2]: -padding[2]]
-        else:
-            return deconv_image
+            return unpad_3d(deconv_image, padding)
+        return deconv_image
 
 
 metadata = {
@@ -265,12 +324,7 @@ metadata = {
     'label': 'Spitfire',
     'class': Spitfire,
     'parameters': {
-        'psf': {
-            'type': torch.Tensor,
-            'label': 'psf',
-            'help': 'Point Spread Function',
-            'default': None
-        },
+        'psf': psf_parameter,
         'weight': {
             'type': float,
             'label': 'weight',

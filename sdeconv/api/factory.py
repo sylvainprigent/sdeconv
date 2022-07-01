@@ -1,10 +1,19 @@
+"""Implements factory for PSF and deconvolution modules
+
+Classes
+-------
+SDeconvFactoryError
+SDeconvModuleFactory
+SDeconvModuleBuilder
+
+"""
+
 import numpy as np
 import torch
 
 
 class SDeconvFactoryError(Exception):
     """Raised when an error happen when a module is built in the factory"""
-    pass
 
 
 class SDeconvModuleFactory:
@@ -86,24 +95,25 @@ class SDeconvModuleBuilder:
         range_ = None
         if 'range' in param_metadata:
             range_ = param_metadata['range']
-
+        arg_value = None
         if type_ is float:
-            return self.get_arg_float(args, key, param_metadata['default'],
-                                      range_)
+            arg_value = self.get_arg_float(args, key, param_metadata['default'],
+                                           range_)
         elif type_ is int:
-            return self.get_arg_int(args, key, param_metadata['default'],
-                                    range_)
+            arg_value = self.get_arg_int(args, key, param_metadata['default'],
+                                         range_)
         elif type_ is bool:
-            return self.get_arg_bool(args, key, param_metadata['default'],
-                                     range_)
+            arg_value = self.get_arg_bool(args, key, param_metadata['default'],
+                                          range_)
         elif type_ is str:
-            return self.get_arg_str(args, key, param_metadata['default'])
+            arg_value = self.get_arg_str(args, key, param_metadata['default'])
         elif type_ is torch.Tensor:
-            return self.get_arg_array(args, key, param_metadata['default'])
+            arg_value = self.get_arg_array(args, key, param_metadata['default'])
         elif type_ == 'select':
-            return self.get_arg_select(args, key, param_metadata['values'])
+            arg_value = self.get_arg_select(args, key, param_metadata['values'])
         elif type_ == 'zyx':
-            return self.get_arg_list(args, key, param_metadata['default'])
+            arg_value = self.get_arg_list(args, key, param_metadata['default'])
+        return arg_value
 
     @staticmethod
     def _error_message(key, value_type, value_range):
@@ -144,8 +154,8 @@ class SDeconvModuleBuilder:
             # cast
             try:
                 value = int(args[key])
-            except ValueError as err:
-                raise SDeconvFactoryError(self._error_message(key, 'int', value_range))
+            except ValueError as exc:
+                raise SDeconvFactoryError(self._error_message(key, 'int', value_range)) from exc
         # test range
         if value_range and len(value_range) == 2:
             if value > value_range[1] or value < value_range[0]:
@@ -172,8 +182,8 @@ class SDeconvModuleBuilder:
             # cast
             try:
                 value = float(args[key])
-            except ValueError as err:
-                raise SDeconvFactoryError(self._error_message(key, 'float', value_range))
+            except ValueError as exc:
+                raise SDeconvFactoryError(self._error_message(key, 'float', value_range)) from exc
         # test range
         if value_range and len(value_range) == 2:
             if value > value_range[1] or value < value_range[0]:
@@ -200,13 +210,17 @@ class SDeconvModuleBuilder:
             # cast
             try:
                 value = str(args[key])
-            except ValueError as err:
-                raise SDeconvFactoryError(self._error_message(key, 'str', value_range))
+            except ValueError as exc:
+                raise SDeconvFactoryError(self._error_message(key, 'str', value_range)) from exc
         # test range
         if value_range and len(value_range) == 2:
             if value > value_range[1] or value < value_range[0]:
                 raise SDeconvFactoryError(self._error_message(key, 'str', value_range))
         return value
+
+    @staticmethod
+    def _str2bool(value):
+        return value.lower() in ("yes", "true", "t", "1")
 
     def get_arg_bool(self, args, key, default_value, value_range=None):
         """Get the value of a parameter from the args list
@@ -226,12 +240,9 @@ class SDeconvModuleBuilder:
         value = default_value
         # cast
         if isinstance(args, dict) and key in args:
-            if type(args[key]) is str:
-                if args[key] == 'True':
-                    value = True
-                else:
-                    value = False
-            elif type(args[key]) is bool:
+            if isinstance(args[key], str):
+                value = SDeconvModuleBuilder._str2bool(args[key])
+            elif isinstance(args[key], bool):
                 value = args[key]
             else:
                 raise SDeconvFactoryError(self._error_message(key, 'bool', value_range))
@@ -259,9 +270,9 @@ class SDeconvModuleBuilder:
         """
         value = default_value
         if isinstance(args, dict) and key in args:
-            if type(args[key]) is torch.Tensor:
+            if isinstance(args[key], torch.Tensor):
                 value = args[key]
-            elif type(args[key]) is np.array:
+            elif isinstance(args[key], np.ndarray):
                 value = torch.Tensor(args[key])
             else:
                 raise SDeconvFactoryError(self._error_message(key, 'array', None))
@@ -285,7 +296,7 @@ class SDeconvModuleBuilder:
         """
         value = default_value
         if isinstance(args, dict) and key in args:
-            if type(args[key]) is list:
+            if isinstance(args[key], list):
                 value = args[key]
             else:
                 raise SDeconvFactoryError(self._error_message(key, 'list', None))
@@ -306,7 +317,7 @@ class SDeconvModuleBuilder:
         """
         if isinstance(args, dict) and key in args:
             value = str(args[key])
-            for x in values:
-                if str(x) == value:
-                    return x
+            for val in values:
+                if str(val) == value:
+                    return val
         raise SDeconvFactoryError(self._error_message(key, 'select', None))

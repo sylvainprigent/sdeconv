@@ -5,7 +5,6 @@ import sys
 import glob
 import tempfile
 import textwrap
-import setuptools  # noqa
 import subprocess
 
 from distutils.dist import Distribution
@@ -39,9 +38,14 @@ def _get_compiler():
     return ccompiler
 
 
-def compile_test_program(code, extra_preargs=[], extra_postargs=[]):
+def compile_test_program(code, extra_preargs=None, extra_postargs=None):
     """Check that some C code can be compiled and run"""
     ccompiler = _get_compiler()
+
+    if not extra_preargs:
+        extra_preargs = []
+    if not extra_postargs:
+        extra_postargs = []
 
     # extra_(pre/post)args can be a callable to make it possible to get its
     # value from the compiler
@@ -57,8 +61,8 @@ def compile_test_program(code, extra_preargs=[], extra_postargs=[]):
             os.chdir(tmp_dir)
 
             # Write test program
-            with open('test_program.c', 'w') as f:
-                f.write(code)
+            with open('test_program.c', 'w') as file_:
+                file_.write(code)
 
             os.mkdir('objects')
 

@@ -20,9 +20,8 @@ DEFAULT_ROOT = 'sdeconv'
 
 
 def _check_cython_version():
-    message = ('Please install Cython with a version >= {0} in order '
-               'to build a sdeconv from source.').format(
-                    CYTHON_MIN_VERSION)
+    message = f'Please install Cython with a version >= {CYTHON_MIN_VERSION} ' \
+              f'in order to build a sdeconv from source.'
     try:
         import Cython
     except ModuleNotFoundError:

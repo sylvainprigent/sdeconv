@@ -1,13 +1,7 @@
-import os
-import numpy as np
-from skimage.io import imread, imsave
-import torch
-
-from sdeconv.psfs.gibson_lanni import SPSFGibsonLanni
+"""Module to test the Gibson-Lanni PSF implementation"""
 
 
-# tmp_path is a pytest fixture
-def test_gibson_lanni(tmp_path):
+def test_gibson_lanni():
     """An example of how you might test your plugin."""
 
     #shape = (18, 128, 128)

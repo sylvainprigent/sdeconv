@@ -1,9 +1,21 @@
+"""Application programing interface for SDeconv
+
+Classes
+-------
+SDeconvAPI
+
+"""
+
 import os
 import importlib
-from .factory import SDeconvModuleFactory
+import torch
+from .factory import SDeconvModuleFactory, SDeconvFactoryError
 
 
 class SDeconvAPI:
+    """Main API to call SDeconv methods.
+    The API implements a factory that instantiate the deconvolution
+    """
     def __init__(self):
         self.psfs = SDeconvModuleFactory()
         self.filters = SDeconvModuleFactory()
@@ -21,11 +33,13 @@ class SDeconvAPI:
         modules = []
         for parent in [directory]:
             path_ = os.path.join(path, parent)
-            for x in os.listdir(path_):
-                if x.endswith(
-                        ".py") and 'setup' not in x and 'interface' not in x and '__init__' not in x and not x.startswith(
+            for module_path in os.listdir(path_):
+                if module_path.endswith(
+                        ".py") and 'setup' not in module_path and \
+                        'interface' not in module_path and \
+                        '__init__' not in module_path and not module_path.startswith(
                         "_"):
-                    modules.append(f"sdeconv.{parent}.{x.split('.')[0]}")
+                    modules.append(f"sdeconv.{parent}.{module_path.split('.')[0]}")
         return modules
 
     def filter(self, name, **kwargs):
@@ -59,54 +73,159 @@ class SDeconvAPI:
         filter_ = self.psfs.get(method_name, **kwargs)
         if filter_.type == 'SPSFGenerator':
             return filter_
-        else:
-            raise SDeconvFactoryError(f'The method {method_name} is not a PSF generator')
+        raise SDeconvFactoryError(f'The method {method_name} is not a PSF generator')
 
     def generate_psf(self, method_name, **kwargs):
+        """Generates a Point SPread Function
+
+        Parameters
+        ----------
+        method_name: str
+            Name of the PSF Generator method
+        kwargs: dict
+            Parameters of the PSF generator
+
+        """
         generator = self.psf(method_name, **kwargs)
         return generator()
 
-    def deconvolve(self, image, method_name, plane_by_plane, **args):
-        filter_ = self.filter(method_name, **args)
+    def deconvolve(self, image, method_name, plane_by_plane, **kwargs):
+        """Run the deconvolution on an image
+
+        Parameters
+        ----------
+        image: torch.Tensor
+            Image to deconvolve. Can be 2D to 5D
+        method_name: str
+            Name of the deconvolution method to use
+        plane_by_plane: bool
+            True to process the image plane by plane when dimension is more than 2
+        kwargs: dict
+            Parameters of the deconvolution method
+
+        """
+        filter_ = self.filter(method_name, **kwargs)
         if filter_.type == 'SDeconvFilter':
             return self._deconv_dims(image, filter_, plane_by_plane=plane_by_plane)
-        else:
-            raise SDeconvFactoryError(f'The method {method_name} is not a deconvolution filter')
+        raise SDeconvFactoryError(f'The method {method_name} is not a deconvolution filter')
+
+    @staticmethod
+    def _deconv_3d_by_plane(image, filter_):
+        """Call the 3D deconvolution plane by plane
+
+        Parameters
+        ----------
+        image: torch.Tensor
+            3D image tensor
+        filter_: class
+            deconvolution class
+
+        """
+        out_image = torch.zeros(image.shape)
+        for i in range(image.shape[0]):
+            out_image[i, ...] = filter_(image[i, ...])
+        return out_image
+
+    @staticmethod
+    def _deconv_4d(image, filter_):
+        """Call the 3D+t deconvolution
+
+        Parameters
+        ----------
+        image: torch.Tensor
+            3D+t image tensor
+        filter_: class
+            deconvolution class
+
+        """
+        out_image = torch.zeros(image.shape)
+        for i in range(image.shape[0]):
+            out_image[i, ...] = filter_(image[i, ...])
+        return out_image
+
+    @staticmethod
+    def _deconv_4d_by_plane(image, filter_):
+        """Call the 3D+t deconvolution plane by plane
+
+        Parameters
+        ----------
+        image: torch.Tensor
+            3D+t image tensor
+        filter_: class
+            deconvolution class
+
+        """
+        out_image = torch.zeros(image.shape)
+        for i in range(image.shape[0]):
+            for j in range(image.shape[1]):
+                out_image[i, j, ...] = filter_(image[i, j, ...])
+        return out_image
+
+    @staticmethod
+    def _deconv_5d(image, filter_):
+        """Call the 3D+t multi-channel deconvolution
+
+        Parameters
+        ----------
+        image: torch.Tensor
+            3D+t multi-channel image tensor
+        filter_: class
+            deconvolution class
+
+        """
+        out_image = torch.zeros(image.shape)
+        for i in range(image.shape[0]):
+            for j in range(image.shape[1]):
+                out_image[i, j, ...] = filter_(image[i, j, ...])
+        return out_image
+
+    @staticmethod
+    def _deconv_5d_by_plane(image, filter_):
+        """Call the 3D+t multi-channel deconvolution plane by plane
+
+        Parameters
+        ----------
+        image: torch.Tensor
+            3D+t multi-channel image tensor
+        filter_: class
+            deconvolution class
+
+        """
+        out_image = torch.zeros(image.shape)
+        for batch in range(image.shape[0]):
+            for channel in range(image.shape[1]):
+                for plane in range(image.shape[2]):
+                    out_image[batch, channel, plane, ...] = \
+                        filter_(image[batch, channel, plane, ...])
+        return out_image
 
     @staticmethod
     def _deconv_dims(image, filter_, plane_by_plane=False):
+        """Call the deconvolution method depending on the image dimension
+
+        Parameters
+        ----------
+        image: torch.Tensor
+            3D+t multi-channel image tensor
+        filter_: class
+            deconvolution class
+
+        """
+        out_image = None
         if image.ndim == 2:
-            return filter_(image)
+            out_image = filter_(image)
         elif image.ndim == 3 and plane_by_plane:
-            out_image = torch.zeros(image.shape)
-            for p in range(image.shape[0]):
-                out_image[p, ...] = filter_(image[p, ...])
-            return out_image
+            out_image = SDeconvAPI._deconv_3d_by_plane(image, filter_)
         elif image.ndim == 3 and not plane_by_plane:
-            return filter_(image)
+            out_image = filter_(image)
         elif image.ndim == 4 and not plane_by_plane:
-            out_image = torch.zeros(image.shape)
-            for b in range(image.shape[0]):
-                out_image[b, ...] = filter_(image[b, ...])
-            return out_image
+            out_image = SDeconvAPI._deconv_4d(image, filter_)
         elif image.ndim == 4 and plane_by_plane:
-            out_image = torch.zeros(image.shape)
-            for b in range(image.shape[0]):
-                for z in range(image.shape[1]):
-                    out_image[b, z, ...] = filter_(image[b, z, ...])
-            return out_image
+            out_image = SDeconvAPI._deconv_4d_by_plane(image, filter_)
         elif image.ndim == 5 and not plane_by_plane:
-            out_image = torch.zeros(image.shape)
-            for b in range(image.shape[0]):
-                for c in range(image.shape[1]):
-                    out_image[b, c, ...] = filter_(image[b, c, ...])
-            return out_image
+            out_image = SDeconvAPI._deconv_5d(image, filter_)
         elif image.ndim == 5 and plane_by_plane:
-            out_image = torch.zeros(image.shape)
-            for b in range(image.shape[0]):
-                for c in range(image.shape[1]):
-                    for z in range(image.shape[2]):
-                        out_image[b, c, z, ...] = filter_(image[b, c, z, ...])
-            return out_image
+            out_image = SDeconvAPI._deconv_5d_by_plane(image, filter_)
         else:
             raise SDeconvFactoryError('SDeconv can process only images up to 5 dims')
+        return out_image

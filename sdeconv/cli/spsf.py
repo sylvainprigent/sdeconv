@@ -1,11 +1,22 @@
-import os
+"""Command line interface module for Point Spread Function generator"""
+
 import argparse
+from skimage.io import imsave
 
 from sdeconv.api import SDeconvAPI
-from skimage.io import imread, imsave
 
 
 def add_args_to_parser(parser, api):
+    """Add an argument to the parser
+
+    Parameters
+    ----------
+    parser: argparse.ArgumentParser
+        Argument parser object
+    api: SDeconvAPI
+        SDeconv Application Programming Interface object
+
+    """
     for filter_name in api.filters.get_keys():
         params = api.psfs.get_parameters(filter_name)
         for key, value in params.items():
@@ -13,6 +24,7 @@ def add_args_to_parser(parser, api):
 
 
 def main():
+    """Command line interface entrypoint function"""
     parser = argparse.ArgumentParser(description='2D to 5D image deconvolution',
                                      conflict_handler='resolve')
 
