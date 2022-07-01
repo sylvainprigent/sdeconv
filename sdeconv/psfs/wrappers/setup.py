@@ -29,7 +29,7 @@ def configuration(parent_package='', top_path=None):
                          include_dirs=[numpy.get_include(), wrappers_dir],
                          libraries=libraries,
                          language='c++',
-                         extra_link_args=['-lstdc++', '-lomp'],
+                         extra_link_args=['-lstdc++'],
                          extra_compile_args=['-std=c++11', '-v']
                          )
     return config
