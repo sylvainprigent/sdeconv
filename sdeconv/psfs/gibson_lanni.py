@@ -1,16 +1,21 @@
 """Implementation of Gibson Lanni Point Spread Function model
 
+This implementation is an adaptation of https://kmdouglass.github.io/posts/implementing-a-fast-gibson-lanni-psf-solver-in-python/
+
 Classes
 -------
 SPSFGibsonLanni
 
 """
+from math import sqrt
 import numpy as np
+import scipy.special
+from scipy.interpolate import interp1d
 import torch
+
 
 from sdeconv.core import SSettings
 from .interface import SPSFGenerator
-from .wrappers.gibsonlanni import py_gibson_lanni_psf
 
 
 class SPSFGibsonLanni(SPSFGenerator):
@@ -20,59 +25,157 @@ class SPSFGibsonLanni(SPSFGenerator):
     ----------
     shape: tuple
         Size of the PSF array in each dimension
-    res_lateral: float
-        Lateral resolution
-    res_axial: float
-        Axial resolution
-    numerical_aperture: float
+    NA: float
         Numerical aperture
-    lambd: float
-        Illumination wavelength
-    ti0: float
-        Working distance
-    ni: float
-        Refractive index immersion
+    wavelength: float
+        Wavelength in microns
+    M: float
+        Magnification
     ns: float
-        Refractive index sample
+        Specimen refractive index (RI)
+    ng0: float
+        Coverslip RI design value
+    ng: float
+        coverslip RI experimental value
+    ni0: float
+        Immersion medium RI design value
+    ni: float
+        immersion medium RI experimental value
+    ti0: float
+        microns, working distance (immersion medium thickness) design value
+    tg0: float
+        microns, coverslip thickness design value
+    tg: float
+        microns, coverslip thickness experimental value
+    res_lateral: float
+        Lateral resolution in microns
+    res_axial: float
+        Axial resolution in microns
+    pZ: float
+        microns, particle distance from coverslip
     use_square: bool
         If true, calculate the square of the Gibson-Lanni model to simulate a pinhole. It then gives
         a PSF for a confocal image
 
     """
-    def __init__(self, shape, res_lateral=100, res_axial=250,
-                 numerical_aperture=1.4, lambd=610,
-                 ti0=150, n_i=1.5, n_s=1.33, use_square=False):
+    def __init__(self, shape, NA=1.4, wavelength=0.610, M=100, ns=1.33,
+                 ng0=1.5, ng=1.5, ni0=1.5, ni=1.5, ti0=150, tg0=170, tg=170,
+                 res_lateral=0.1, res_axial=0.25, pZ=0, use_square=False):
         super().__init__()
         self.shape = shape
+
+        # Microscope parameters
+        self.NA = NA
+        self.wavelength = wavelength
+        self.M = M
+        self.ns = ns
+        self.ng0 = ng0
+        self.ng = ng
+        self.ni0 = ni0
+        self.ni = ni
+        self.ti0 = ti0
+        self.tg0 = tg0
+        self.tg = tg
         self.res_lateral = res_lateral
         self.res_axial = res_axial
-        self.numerical_aperture = numerical_aperture
-        self.lambd = lambd
-        self.ti0 = ti0
-        self.n_i = n_i
-        self.n_s = n_s
+        self.pZ = pZ
         self.use_square = use_square
+        # output
         self.psf_ = None
 
     def __call__(self):
-        """Calculate the PSF image"""
-        self.psf_ = py_gibson_lanni_psf(self.shape[2], self.shape[1],
-                                        self.shape[0],
-                                        self.res_lateral, self.res_axial,
-                                        self.numerical_aperture, self.lambd,
-                                        self.ti0, self.n_i, self.n_s)
-        self.psf_ = torch.tensor(np.transpose(self.psf_, (2, 0, 1))).to(SSettings.instance().device)
+        # Precision control
+        num_basis = 100  # Number of rescaled Bessels that approximate the phase function
+        num_samples = 1000  # Number of pupil samples along radial direction
+        oversampling = 2  # Defines the upsampling ratio on the image space grid for computations
+
+        size_x = self.shape[2]
+        size_y = self.shape[1]
+        size_z = self.shape[0]
+        min_wavelength = 0.436  # microns
+        scaling_factor = self.NA * (3 * np.arange(1, num_basis + 1) - 2) * min_wavelength / self.wavelength
+
+        # Place the origin at the center of the final PSF array
+        x0 = (size_x - 1) / 2
+        y0 = (size_y - 1) / 2
+        # Find the maximum possible radius coordinate of the PSF array by finding the distance
+        # from the center of the array to a corner
+        max_radius = round(sqrt((size_x - x0) * (size_x - x0) + (size_y - y0) * (size_y - y0))) + 1
+        # Radial coordinates, image space
+        r = self.res_lateral * np.arange(0, oversampling * max_radius) / oversampling
+        # Radial coordinates, pupil space
+        a = min([self.NA, self.ns, self.ni, self.ni0, self.ng, self.ng0]) / self.NA
+        rho = np.linspace(0, a, num_samples)
+        # Stage displacements away from best focus
+        z = self.res_axial * np.arange(-size_z / 2, size_z / 2) + self.res_axial / 2
+
+        # Define the wavefront aberration
+        OPDs = self.pZ * np.sqrt(self.ns * self.ns - self.NA * self.NA * rho * rho)  # OPD in the sample
+        OPDi = (z.reshape(-1, 1) + self.ti0) * np.sqrt(self.ni * self.ni - self.NA * self.NA * rho * rho) - self.ti0 * np.sqrt(
+            self.ni0 * self.ni0 - self.NA * self.NA * rho * rho)  # OPD in the immersion medium
+        OPDg = self.tg * np.sqrt(self.ng * self.ng - self.NA * self.NA * rho * rho) - self.tg0 * np.sqrt(
+            self.ng0 * self.ng0 - self.NA * self.NA * rho * rho)  # OPD in the coverslip
+        W = 2 * np.pi / self.wavelength * (OPDs + OPDi + OPDg)
+
+        # Sample the phase
+        # Shape is (number of z samples by number of rho samples)
+        phase = np.cos(W) + 1j * np.sin(W)
+
+        # Define the basis of Bessel functions
+        # Shape is (number of basis functions by number of rho samples)
+        J = scipy.special.jv(0, scaling_factor.reshape(-1, 1) * rho)
+
+        # Compute the approximation to the sampled pupil phase by finding the least squares
+        # solution to the complex coefficients of the Fourier-Bessel expansion.
+        # Shape of C is (number of basis functions by number of z samples).
+        # Note the matrix transposes to get the dimensions correct.
+        C, residuals, _, _ = np.linalg.lstsq(J.T, phase.T, rcond=None)
+
+        # compute the PSF
+        b = 2 * np. pi * r.reshape(-1, 1) * self.NA / self.wavelength
+
+        # Convenience functions for J0 and J1 Bessel functions
+        J0 = lambda x: scipy.special.jv(0, x)
+        J1 = lambda x: scipy.special.jv(1, x)
+
+        # See equation 5 in Li, Xue, and Blu
+        denom = scaling_factor * scaling_factor - b * b
+        R = (scaling_factor * J1(scaling_factor * a) * J0(b * a) * a - b * J0(scaling_factor * a) * J1(b * a) * a)
+        R /= denom
+
+        # The transpose places the axial direction along the first dimension of the array, i.e. rows
+        # This is only for convenience.
+        PSF_rz = (np.abs(R.dot(C)) ** 2).T
+
+        # Normalize to the maximum value
+        PSF_rz /= np.max(PSF_rz)
+
+        # cartesian PSF
+        # Create the fleshed-out xy grid of radial distances from the center
+        xy = np.mgrid[0:size_y, 0:size_x]
+        r_pixel = np.sqrt((xy[1] - x0) * (xy[1] - x0) + (xy[0] - y0) * (xy[0] - y0)) * self.res_lateral
+
+        self.psf_ = np.zeros((size_z, size_y, size_x))
+
+        for z_index in range(size_z):
+            # Interpolate the radial PSF function
+            PSF_interp = interp1d(r, PSF_rz[z_index, :])
+
+            # Evaluate the PSF at each value of r_pixel
+            self.psf_[z_index, :, :] = PSF_interp(r_pixel.ravel()).reshape(size_y, size_x)
+
         if self.use_square:
-            self.psf_ = torch.square(self.psf_)
-        return self.psf_
+            self.psf_ = np.square(self.psf_)
+
+        return torch.from_numpy(self.psf_).to(SSettings.instance().device)
 
 
-def spsf_gibson_lanni(shape, res_lateral=100, res_axial=250,
-                      numerical_aperture=1.4, lambd=610,
-                      ti0=150, n_i=1.5, n_s=1.33, use_square=False):
-    filter_ = SPSFGibsonLanni(shape, res_lateral, res_axial,
-                              numerical_aperture, lambd,
-                              ti0, n_i, n_s, use_square)
+def spsf_gibson_lanni(shape, NA=1.4, wavelength=0.610, M=100, ns=1.33,
+                      ng0=1.5, ng=1.5, ni0=1.5, ni=1.5, ti0=150, tg0=170, tg=170,
+                      res_lateral=0.1, res_axial=0.25, pZ=0, use_square=False):
+    filter_ = SPSFGibsonLanni(shape, NA, wavelength, M, ns,
+                              ng0, ng, ni0, ni, ti0, tg0, tg,
+                              res_lateral, res_axial, pZ, use_square)
     return filter_()
 
 
@@ -87,47 +190,89 @@ metadata = {
             'help': 'Regularisation parameter',
             'default': [11, 128, 128]
         },
-        'res_lateral': {
-            'type': 'float',
-            'label': 'Lateral resolution',
-            'help': 'Lateral resolution',
-            'default': 100
-        },
-        'res_axial': {
-            'type': 'float',
-            'label': 'Axial resolution',
-            'help': 'Axial resolution',
-            'default': 250
-        },
-        'numerical_aperture': {
+        'NA': {
             'type': 'float',
             'label': 'Numerical aperture',
             'help': 'Numerical aperture',
             'default': 1.4
         },
-        'lambd': {
+        'wavelength': {
             'type': 'float',
-            'label': 'Illumination wavelength',
-            'help': 'Illumination wavelength',
-            'default': 610
+            'label': 'Wavelength',
+            'help': 'Wavelength',
+            'default': 0.610
+        },
+        'M': {
+            'type': 'float',
+            'label': 'Magnification',
+            'help': 'Magnification',
+            'default': 100
+        },
+        'ns': {
+            'type': 'float',
+            'label': 'ns',
+            'help': 'Specimen refractive index (RI)',
+            'default': 1.33
+        },
+        'ng0': {
+            'type': 'float',
+            'label': 'ng0',
+            'help': 'Coverslip RI design value',
+            'default': 1.5
+        },
+        'ng': {
+            'type': 'float',
+            'label': 'ng',
+            'help': 'coverslip RI experimental value',
+            'default': 1.5
+        },
+        'ni0': {
+            'type': 'float',
+            'label': 'ni0',
+            'help': 'Immersion medium RI design value',
+            'default': 1.5
+        },
+        'ni': {
+            'type': 'float',
+            'label': 'ni0',
+            'help': 'Immersion medium RI experimental value',
+            'default': 1.5
         },
         'ti0': {
             'type': 'float',
-            'label': 'Working distance',
-            'help': 'Working distance',
+            'label': 'ti0',
+            'help': 'microns, working distance (immersion medium thickness) design value',
             'default': 150
         },
-        'n_i': {
+        'tg0': {
             'type': 'float',
-            'label': 'Refractive index immersion',
-            'help': 'Refractive index immersion',
-            'default': 1.5
+            'label': 'tg0',
+            'help': 'microns, coverslip thickness design value',
+            'default': 170
         },
-        'n_s': {
+        'tg': {
             'type': 'float',
-            'label': 'Refractive index sample',
-            'help': 'Refractive index sample',
-            'default': 1.33
+            'label': 'tg',
+            'help': 'microns, coverslip thickness experimental value',
+            'default': 170
+        },
+        'res_lateral': {
+            'type': 'float',
+            'label': 'Lateral resolution',
+            'help': 'Lateral resolution in microns',
+            'default': 0.1
+        },
+        'res_axial': {
+            'type': 'float',
+            'label': 'Axial resolution',
+            'help': 'Axial resolution in microns',
+            'default': 0.25
+        },
+        'pZ': {
+            'type': 'float',
+            'label': 'Particle position',
+            'help': 'Particle distance from coverslip in microns',
+            'default': 0
         },
         'use_square': {
             'type': 'bool',

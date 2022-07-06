@@ -23,7 +23,7 @@ jobs:
     strategy:
       matrix:
         platform: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: [3.8, 3.9]
+        python-version: [3.8, 3.9, '3.10']
 
     steps:
       - uses: actions/checkout@v2
@@ -45,35 +45,15 @@ jobs:
       # setup-miniconda: https://github.com/conda-incubator/setup-miniconda
       # and
       # tox-conda: https://github.com/tox-dev/tox-conda
-      - name: Build and test Windows
-        if: runner.os == 'Windows' 
+      - name: Install dependencies
         run: |
-          C:\Miniconda\condabin\conda.bat init powershell
-          C:\Miniconda\condabin\conda.bat create -n myenv python=${{ matrix.python-version }}
-          C:\Miniconda\condabin\conda.bat activate myenv
-          C:\Miniconda\python.exe -m pip install --upgrade pip
-          C:\Miniconda\python.exe -m pip install setuptools numpy torch torchvision scikit-image scipy cython
-          C:\Miniconda\python.exe setup.py build_ext --inplace
-      - name: Build and test macOS
-        if: runner.os == 'macOS' 
-        run: |
-          sudo conda init bash
-          sudo conda create -n myenv python=${{ matrix.python-version }}
-          sudo $CONDA/bin/activate myenv
-          sudo $CONDA/bin/python -m pip install --upgrade pip
-          sudo $CONDA/bin/pip install setuptools pytest numpy torch torchvision scikit-image scipy cython tox-gh-actions
-          sudo $CONDA/bin/python setup.py build_ext --inplace  
-          $CONDA/bin/pytest .
-      - name: Build and test Linux
-        if: runner.os == 'Linux' 
-        run: |
-          conda init bash
-          conda create -n myenv python=${{ matrix.python-version }}
-          $CONDA/bin/activate myenv
-          $CONDA/bin/python -m pip install --upgrade pip
-          $CONDA/bin/pip install setuptools pytest numpy scipy torch torchvision scikit-image cython tox-gh-actions
-          $CONDA/bin/python setup.py build_ext --inplace    
-          $CONDA/bin/pytest .
+          python -m pip install --upgrade pip
+          pip install setuptools tox numpy scipy tox-gh-actions
+      # this runs the platform-specific tests declared in tox.ini
+      - name: Test with tox
+        run: tox
+        env:
+          PLATFORM: ${{ matrix.platform }}
 
       - name: Coverage
         uses: codecov/codecov-action@v1
@@ -83,10 +63,7 @@ jobs:
     # and requires that you have put your twine API key in your
     # github secrets (see readme for details)
     needs: [test]
-    runs-on: ${{ matrix.platform }}
-    strategy:
-      matrix:
-        platform: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ubuntu-latest
     if: contains(github.ref, 'tags')
     steps:
       - uses: actions/checkout@v2
@@ -94,29 +71,16 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: "3.x"
-      - name: Build and publish windows
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install numpy scipy torch torchvision scikit-image
+          pip install -U setuptools setuptools_scm wheel twine
+      - name: Build and publish
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.TWINE_API_KEY }}
-        if: runner.os == 'Windows' 
         run: |
-          C:\Miniconda\condabin\conda.bat init powershell
-          C:\Miniconda\condabin\conda.bat create -n myenv python=${{ matrix.python-version }}
-          C:\Miniconda\condabin\conda.bat activate myenv
-          C:\Miniconda\python.exe -m pip install --upgrade pip
-          C:\Miniconda\python.exe -m pip install setuptools numpy scipy torch torchvision scikit-image cython wheel twine
-          C:\Miniconda\python.exe setup.py bdist_wheel
-          C:\Miniconda\python.exe -m twine upload -u __token__ -p ${{ secrets.TWINE_API_KEY }} dist\*   
-      - name: Build and publish macosx
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.TWINE_API_KEY }}
-        if: runner.os == 'macOS'
-        run: |
-          sudo conda init bash
-          sudo conda create -n myenv python=${{ matrix.python-version }}
-          sudo $CONDA/bin/activate myenv
-          sudo $CONDA/bin/python -m pip install --upgrade pip
-          sudo $CONDA/bin/pip install setuptools numpy scipy torch torchvision scikit-image cython wheel twine
-          sudo $CONDA/bin/python setup.py bdist_wheel
-          sudo $CONDA/bin/python -m twine upload -u __token__ -p ${{ secrets.TWINE_API_KEY }} dist/*
+          git tag
+          python setup.py sdist bdist_wheel
+          twine upload dist/*
