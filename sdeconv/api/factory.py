@@ -36,7 +36,7 @@ class SDeconvModuleFactory:
 
     def get_parameters(self, key):
         """Parameters getter method"""
-        return self._data[key]['parameters']
+        return self._data[key]['inputs']
 
     def get_keys(self):
         """Get the names of all the registered modules
