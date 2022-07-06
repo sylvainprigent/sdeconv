@@ -103,8 +103,6 @@ jobs:
           C:\Miniconda\condabin\conda.bat init powershell
           C:\Miniconda\condabin\conda.bat create -n myenv python=${{ matrix.python-version }}
           C:\Miniconda\condabin\conda.bat activate myenv
-          copy C:\Miniconda\Library\include\fftw3.h C:\Miniconda\include\fftw3.h
-          copy C:\Miniconda\Library\lib\fftw3f.lib C:\Miniconda\libs\fftw3f.lib 
           C:\Miniconda\python.exe -m pip install --upgrade pip
           C:\Miniconda\python.exe -m pip install setuptools numpy scipy torch torchvision scikit-image cython wheel twine
           C:\Miniconda\python.exe setup.py bdist_wheel
@@ -116,9 +114,22 @@ jobs:
         if: runner.os == 'macOS' 
         run: |
           sudo conda init bash
-          sudo conda create -n myenv python=3.8
+          sudo conda create -n myenv python=${{ matrix.python-version }}
           sudo $CONDA/bin/activate myenv
           sudo $CONDA/bin/python -m pip install --upgrade pip
           sudo $CONDA/bin/pip install setuptools numpy scipy torch torchvision scikit-image cython wheel twine
           sudo $CONDA/bin/python setup.py bdist_wheel  
-          sudo $CONDA/bin/python -m twine upload -u __token__ -p ${{ secrets.TWINE_API_KEY }} dist/*    
+          sudo $CONDA/bin/python -m twine upload -u __token__ -p ${{ secrets.TWINE_API_KEY }} dist/*
+      - name: Build and publish linux
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.TWINE_API_KEY }}
+        if: runner.os == 'Linux'
+        run: |
+          conda init bash
+          conda create -n myenv python=${{ matrix.python-version }}
+          $CONDA/bin/activate myenv
+          $CONDA/bin/python -m pip install --upgrade pip
+          $CONDA/bin/pip install setuptools pytest numpy scipy torch torchvision scikit-image cython tox-gh-actions
+          $CONDA/bin/python setup.py bdist_wheel
+          $CONDA/bin/python -m twine upload -u __token__ -p ${{ secrets.TWINE_API_KEY }} dist/*
