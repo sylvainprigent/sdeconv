@@ -22,7 +22,14 @@ class SPSFGaussian(SPSFGenerator):
         self.shape = shape
         self.psf_ = None
 
+    @staticmethod
+    def _normalize_inputs(sigma, shape):
+        if len(shape) == 3 and shape[0] == 1:
+            return sigma[1:], shape[1:]
+        return sigma, shape
+
     def __call__(self):
+        self.sigma, self.shape = SPSFGaussian._normalize_inputs(self.sigma, self.shape)
         """Calculate the PSF image"""
         if len(self.shape) == 2:
             self.psf_ = torch.zeros((self.shape[0], self.shape[1])).to(SSettings.instance().device)
@@ -61,22 +68,33 @@ class SPSFGaussian(SPSFGenerator):
         return self.psf_
 
 
+def spsf_gaussian(sigma, shape):
+    filter_ = SPSFGaussian(sigma, shape)
+    return filter_()
+
+
 metadata = {
     'name': 'SPSFGaussian',
     'label': 'Gaussian PSF',
-    'class': SPSFGaussian,
-    'parameters': {
+    'fnc': spsf_gaussian,
+    'inputs': {
         'sigma': {
-            'type': 'zyx',
+            'type': 'zyx_float',
             'label': 'Sigma',
             'help': 'Gaussian standard deviation in each direction',
-            'default': [1.5, 1.5, 0]
+            'default': [0, 1.5, 1.5]
         },
         'shape': {
-            'type': 'zyx',
+            'type': 'zyx_int',
             'label': 'Size',
             'help': 'Regularisation parameter',
-            'default': [128, 128, 1]
+            'default': [1, 128, 128]
         }
+    },
+    'outputs': {
+        'image': {
+            'type': 'Image',
+            'label': 'PSF Gaussian'
+        },
     }
 }

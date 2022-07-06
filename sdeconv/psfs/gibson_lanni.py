@@ -67,65 +67,79 @@ class SPSFGibsonLanni(SPSFGenerator):
         return self.psf_
 
 
+def spsf_gibson_lanni(shape, res_lateral=100, res_axial=250,
+                      numerical_aperture=1.4, lambd=610,
+                      ti0=150, n_i=1.5, n_s=1.33, use_square=False):
+    filter_ = SPSFGibsonLanni(shape, res_lateral, res_axial,
+                              numerical_aperture, lambd,
+                              ti0, n_i, n_s, use_square)
+    return filter_()
+
+
 metadata = {
     'name': 'SPSFGibsonLanni',
     'label': 'Gibson Lanni PSF',
-    'class': SPSFGibsonLanni,
-    'parameters': {
+    'fnc': spsf_gibson_lanni,
+    'inputs': {
         'shape': {
-            'type': 'zyx',
+            'type': 'zyx_int',
             'label': 'Size',
             'help': 'Regularisation parameter',
             'default': [11, 128, 128]
         },
         'res_lateral': {
-            'type': float,
+            'type': 'float',
             'label': 'Lateral resolution',
             'help': 'Lateral resolution',
             'default': 100
         },
         'res_axial': {
-            'type': float,
+            'type': 'float',
             'label': 'Axial resolution',
             'help': 'Axial resolution',
             'default': 250
         },
         'numerical_aperture': {
-            'type': float,
+            'type': 'float',
             'label': 'Numerical aperture',
             'help': 'Numerical aperture',
             'default': 1.4
         },
         'lambd': {
-            'type': float,
+            'type': 'float',
             'label': 'Illumination wavelength',
             'help': 'Illumination wavelength',
             'default': 610
         },
         'ti0': {
-            'type': float,
+            'type': 'float',
             'label': 'Working distance',
             'help': 'Working distance',
             'default': 150
         },
         'n_i': {
-            'type': float,
+            'type': 'float',
             'label': 'Refractive index immersion',
             'help': 'Refractive index immersion',
             'default': 1.5
         },
         'n_s': {
-            'type': float,
+            'type': 'float',
             'label': 'Refractive index sample',
             'help': 'Refractive index sample',
             'default': 1.33
         },
         'use_square': {
-            'type': bool,
+            'type': 'bool',
             'label': 'Confocal',
             'help': 'Check for confocal PSF, uncheck for widefield',
             'default': True
         }
-
+    },
+    'outputs': {
+        'image': {
+            'type': 'Image',
+            'label': 'PSF Gibson-Lanni'
+        },
     }
 }

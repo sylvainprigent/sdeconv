@@ -86,6 +86,7 @@ class SDeconvAPI:
             Parameters of the PSF generator
 
         """
+        # print('generate psf args=', **kwargs)
         generator = self.psf(method_name, **kwargs)
         return generator()
 

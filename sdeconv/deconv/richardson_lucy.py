@@ -1,5 +1,7 @@
 """Implementation of Richardson-Lucy deconvolution for 2D and 3D images"""
 import torch
+import numpy as np
+from sdeconv.core import SSettings
 from .interface import SDeconvFilter
 from ._utils import pad_2d, pad_3d
 
@@ -109,23 +111,52 @@ class SRichardsonLucy(SDeconvFilter):
         return out_image
 
 
+def srichardsonlucy(image, psf, niter=30, pad=13):
+    """Convenient function to call the SRichardsonLucy using numpy array"""
+    if isinstance(image, np.ndarray):
+        psf_ = torch.tensor(psf).to(SSettings.instance().device)
+    else:
+        psf_ = psf
+    filter_ = SRichardsonLucy(psf_, niter, pad)
+    if isinstance(image, np.ndarray):
+        return filter_(torch.tensor(image).to(SSettings.instance().device))
+    return filter_(image)
+
+
 metadata = {
     'name': 'SRichardsonLucy',
     'label': 'Richardson-Lucy',
-    'class': SRichardsonLucy,
-    'parameters': {
+    'fnc': srichardsonlucy,
+    'inputs': {
+        'image': {
+            'type': 'Image',
+            'label': 'Image',
+            'help': 'Input image'
+        },
         'psf': {
-            'type': torch.Tensor,
-            'label': 'psf',
-            'help': 'Point Spread Function',
-            'default': None
+            'type': 'Image',
+            'label': 'PSF',
+            'help': 'Point Spread Function'
         },
         'niter': {
-            'type': int,
+            'type': 'int',
             'label': 'niter',
             'help': 'Number of iterations',
             'default': 30,
             'range': (0, 999999)
+        },
+        'pad': {
+            'type': 'int',
+            'label': 'Padding',
+            'help': 'Padding to avoid spectrum artifacts',
+            'default': 13,
+            'range': (0, 999999)
         }
+    },
+    'outputs': {
+        'image': {
+            'type': 'Image',
+            'label': 'Richardson-Lucy'
+        },
     }
 }

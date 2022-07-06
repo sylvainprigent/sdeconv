@@ -149,7 +149,7 @@ def unpad_3d(image, padding):
 
 # define the PSF parameter
 psf_parameter = {
-    'type': torch.Tensor,
+    'type': 'torch.Tensor',
     'label': 'psf',
     'help': 'Point Spread Function',
     'default': None

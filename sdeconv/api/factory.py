@@ -85,7 +85,7 @@ class SDeconvModuleBuilder:
         """
         # check the args
         instance_args = {}
-        for key, value in metadata['parameters'].items():
+        for key, value in metadata['inputs'].items():
             val = self._get_arg(value, key, args)
             instance_args[key] = val
         return metadata['class'](**instance_args)
@@ -96,22 +96,22 @@ class SDeconvModuleBuilder:
         if 'range' in param_metadata:
             range_ = param_metadata['range']
         arg_value = None
-        if type_ is float:
+        if type_ == 'float':
             arg_value = self.get_arg_float(args, key, param_metadata['default'],
                                            range_)
-        elif type_ is int:
+        elif type_ == 'int':
             arg_value = self.get_arg_int(args, key, param_metadata['default'],
                                          range_)
-        elif type_ is bool:
+        elif type_ == 'bool':
             arg_value = self.get_arg_bool(args, key, param_metadata['default'],
                                           range_)
-        elif type_ is str:
+        elif type_ == 'str':
             arg_value = self.get_arg_str(args, key, param_metadata['default'])
         elif type_ is torch.Tensor:
             arg_value = self.get_arg_array(args, key, param_metadata['default'])
         elif type_ == 'select':
             arg_value = self.get_arg_select(args, key, param_metadata['values'])
-        elif type_ == 'zyx':
+        elif 'zyx' in type_:
             arg_value = self.get_arg_list(args, key, param_metadata['default'])
         return arg_value
 
@@ -296,7 +296,7 @@ class SDeconvModuleBuilder:
         """
         value = default_value
         if isinstance(args, dict) and key in args:
-            if isinstance(args[key], list):
+            if isinstance(args[key], list) or isinstance(args[key], tuple):
                 value = args[key]
             else:
                 raise SDeconvFactoryError(self._error_message(key, 'list', None))

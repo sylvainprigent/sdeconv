@@ -1,5 +1,6 @@
 """Implements the Wiener deconvolution for 2D and 3D images"""
 import torch
+import numpy as np
 from sdeconv.core import SSettings
 from .interface import SDeconvFilter
 from ._utils import pad_2d, pad_3d, unpad_3d, psf_parameter
@@ -143,25 +144,52 @@ class SWiener(SDeconvFilter):
         return out_image
 
 
+def swiener(image, psf, beta=1e-5, pad=0):
+    """Convenient function to call the SWiener"""
+    if isinstance(image, np.ndarray):
+        psf_ = torch.tensor(psf).to(SSettings.instance().device)
+    else:
+        psf_ = psf
+    filter_ = SWiener(psf_, beta, pad)
+    if isinstance(image, np.ndarray):
+        return filter_(torch.tensor(image).to(SSettings.instance().device))
+    return filter_(image)
+
+
 metadata = {
     'name': 'SWiener',
     'label': 'Wiener',
-    'class': SWiener,
-    'parameters': {
-        'psf': psf_parameter,
+    'fnc': swiener,
+    'inputs': {
+        'image': {
+            'type': 'Image',
+            'label': 'Image',
+            'help': 'Input image'
+        },
+        'psf': {
+            'type': 'Image',
+            'label': 'PSF',
+            'help': 'Point Spread Function'
+        },
         'beta': {
-            'type': float,
+            'type': 'float',
             'label': 'Beta',
             'help': 'Regularisation parameter',
             'default': 1e-5,
             'range': (0, 999999)
         },
         'pad': {
-            'type': int,
+            'type': 'int',
             'label': 'Padding',
             'help': 'Padding to avoid spectrum artifacts',
             'default': 13,
             'range': (0, 999999)
         }
+    },
+    'outputs': {
+        'image': {
+            'type': 'Image',
+            'label': 'Wiener'
+        },
     }
 }

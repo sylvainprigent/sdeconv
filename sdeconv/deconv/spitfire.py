@@ -1,5 +1,7 @@
 """Implements the Spitfire deconvolution algorithms for 2D and 3D images"""
 import torch
+import numpy as np
+from sdeconv.core import SSettings
 from .interface import SDeconvFilter
 from ._utils import pad_2d, pad_3d, unpad_3d, psf_parameter
 
@@ -319,25 +321,85 @@ class Spitfire(SDeconvFilter):
         return deconv_image
 
 
+def spitfire(image, psf, weight=0.6, delta=1, reg=0.995, gradient_step=0.01,
+             precision=1e-7, pad=13, observers=[]):
+    """Convenient function to call Spitfire with numpy"""
+    if isinstance(image, np.ndarray):
+        psf_ = torch.tensor(psf).to(SSettings.instance().device)
+    else:
+        psf_ = psf
+    filter_ = Spitfire(psf_, weight, delta, reg, gradient_step, precision, pad)
+    for observer in observers:
+        filter_.add_observer(observer)
+    if isinstance(image, np.ndarray):
+        return filter_(torch.tensor(image).to(SSettings.instance().device))
+    return filter_(image)
+
+
 metadata = {
     'name': 'Spitfire',
     'label': 'Spitfire',
-    'class': Spitfire,
-    'parameters': {
-        'psf': psf_parameter,
+    'fnc': spitfire,
+    'inputs': {
+        'image': {
+            'type': 'Image',
+            'label': 'Image',
+            'help': 'Input image'
+        },
+        'psf': {
+            'type': 'Image',
+            'label': 'PSF',
+            'help': 'Point Spread Function'
+        },
         'weight': {
-            'type': float,
+            'type': 'float',
             'label': 'weight',
             'help': 'Model weight between hessian and sparsity. Value is in  ]0, 1[',
             'default': 0.6,
             'range': (0, 1)
         },
         'reg': {
-            'type': float,
+            'type': 'float',
             'label': 'Regularization',
             'help': 'Regularization weight. Value is in [0, 1]',
             'default': 0.995,
             'range': (0, 1)
+        },
+        'delta': {
+            'type': 'float',
+            'label': 'Delta',
+            'help': 'For 3D images resolution delta between xy and z',
+            'default': 1,
+            'advanced': True,
+        },
+        'gradient_step': {
+            'type': 'float',
+            'label': 'Gradient Step',
+            'help': 'Step for ADAM gradient descente optimization',
+            'default': 0.01,
+            'advanced': True,
+        },
+        'precision': {
+            'type': 'float',
+            'label': 'Precision',
+            'help': 'Stop criterion. Stop gradient descent when the loss '
+                    'decrease less than precision',
+            'default': 1e-7,
+            'advanced': True,
+        },
+        'pad': {
+            'type': 'int',
+            'label': 'Padding',
+            'help': 'Padding to avoid spectrum artifacts',
+            'default': 13,
+            'range': (0, 999999),
+            'advanced': True
         }
+    },
+    'outputs': {
+        'image': {
+            'type': 'Image',
+            'label': 'Spitfire'
+        },
     }
 }
