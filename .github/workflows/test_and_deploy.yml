@@ -107,16 +107,16 @@ jobs:
           C:\Miniconda\python.exe -m pip install setuptools numpy scipy torch torchvision scikit-image cython wheel twine
           C:\Miniconda\python.exe setup.py bdist_wheel
           C:\Miniconda\python.exe -m twine upload -u __token__ -p ${{ secrets.TWINE_API_KEY }} dist\*   
-#      - name: Build and publish macosx
-#        env:
-#          TWINE_USERNAME: __token__
-#          TWINE_PASSWORD: ${{ secrets.TWINE_API_KEY }}
-#        if: runner.os == 'macOS'
-#        run: |
-#          sudo conda init bash
-#          sudo conda create -n myenv python=${{ matrix.python-version }}
-#          sudo $CONDA/bin/activate myenv
-#          sudo $CONDA/bin/python -m pip install --upgrade pip
-#          sudo $CONDA/bin/pip install setuptools numpy scipy torch torchvision scikit-image cython wheel twine
-#          sudo $CONDA/bin/python setup.py bdist_wheel
-#          sudo $CONDA/bin/python -m twine upload -u __token__ -p ${{ secrets.TWINE_API_KEY }} dist/*
+      - name: Build and publish macosx
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.TWINE_API_KEY }}
+        if: runner.os == 'macOS'
+        run: |
+          sudo conda init bash
+          sudo conda create -n myenv python=${{ matrix.python-version }}
+          sudo $CONDA/bin/activate myenv
+          sudo $CONDA/bin/python -m pip install --upgrade pip
+          sudo $CONDA/bin/pip install setuptools numpy scipy torch torchvision scikit-image cython wheel twine
+          sudo $CONDA/bin/python setup.py bdist_wheel
+          sudo $CONDA/bin/python -m twine upload -u __token__ -p ${{ secrets.TWINE_API_KEY }} dist/*

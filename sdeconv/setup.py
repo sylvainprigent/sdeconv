@@ -6,7 +6,7 @@ from numpy.distutils.misc_util import Configuration
 from sdeconv._build_utils import cythonize_extensions
 
 
-__version__ = '1.0.0'
+__version__ = '1.0.1'
 
 
 def configuration(parent_package='', top_path=None):
