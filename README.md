@@ -25,7 +25,7 @@ The developmental version of the package has been tested on the following system
 2. Open an anaconda prompt / command prompt with `conda` for **python 3** in the path
 3. Create a new environment with `conda create --name sdeconv python=3.9`.
 4. To activate this new environment, run `conda activate sdeconv`
-5. To install the `STracking`library, run `python -m pip install sdeconv`. 
+5. To install the `SDeconv`library, run `python -m pip install sdeconv`. 
 
 if you need to update to a new release, use:
 ~~~sh
@@ -40,14 +40,14 @@ This install is for developers or people who want the last features in the ``mai
 2. Open an anaconda prompt / command prompt with `conda` for **python 3** in the path
 3. Create a new environment with `conda create --name sdeconv python=3.9`.
 4. To activate this new environment, run `conda activate sdeconv`
-5. Pull the source code from git with `git pull https://github.com/sylvainprigent/stracking.git 
-6. Then install the `STracking` library from you local dir with: `python -m pip install -e ./sdeconv`. 
+5. Pull the source code from git with `git pull https://github.com/sylvainprigent/sdeconv.git 
+6. Then install the `SDeconv` library from you local dir with: `python -m pip install -e ./sdeconv`. 
 
-## Use STracking with napari
+## Use SDeconv with napari
 
 The SDeconv library is embedded in a napari plugin that allows using ``SDeconv`` with a graphical interface.
 Please refer to the [`SDeconv` napari plugin](https://www.napari-hub.org/plugins/napari-sdeconv) documentation to install and use it.
 
-# STracking documentation
+# SDeconv documentation
 
 The full documentation with tutorial and docstring is available [here](https://sylvainprigent.github.io/sdeconv/)
