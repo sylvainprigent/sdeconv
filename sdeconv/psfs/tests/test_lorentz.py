@@ -2,7 +2,7 @@
 
 import os
 import numpy as np
-from skimage.io import imread
+from skimage.io import imread, imsave
 
 from sdeconv.psfs.lorentz import SPSFLorentz
 
@@ -14,7 +14,7 @@ def test_psf_lorentz_2d():
     psf = psf_generator()
 
     root_dir = os.path.dirname(os.path.abspath(__file__))
-    imsave(os.path.join(root_dir, 'lorentz2d.tif'), psf.detach().numpy())
+    #imsave(os.path.join(root_dir, 'lorentz2d.tif'), psf.detach().numpy())
     ref_psf = imread(os.path.join(root_dir, 'lorentz2d.tif'))
 
     np.testing.assert_almost_equal(psf.detach().cpu().numpy(), ref_psf, decimal=5)
@@ -27,7 +27,7 @@ def test_psf_lorentz_3d():
     psf = psf_generator()
 
     root_dir = os.path.dirname(os.path.abspath(__file__))
-    imsave(os.path.join(root_dir, 'lorentz3d.tif'), psf.detach().numpy())
+    #imsave(os.path.join(root_dir, 'lorentz3d.tif'), psf.detach().numpy())
     ref_psf = imread(os.path.join(root_dir, 'lorentz3d.tif'))
 
     np.testing.assert_almost_equal(psf.detach().cpu().numpy(), ref_psf, decimal=5)
