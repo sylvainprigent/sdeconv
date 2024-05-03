@@ -169,7 +169,7 @@ class Spitfire(SDeconvFilter):
 
         """
         self.progress(0)
-        mini = torch.min(image)
+        mini = torch.min(image) + 1e-5
         maxi = torch.max(image)
         image = (image-mini)/(maxi-mini)
 
@@ -269,7 +269,7 @@ class Spitfire(SDeconvFilter):
 
         """
         self.progress(0)
-        mini = torch.min(image)
+        mini = torch.min(image) + 1e-5
         maxi = torch.max(image)
         image = (image-mini)/(maxi-mini)
         image_pad, psf_pad, padding = pad_3d(image, self.psf / torch.sum(self.psf), self.pad)
