@@ -6,6 +6,6 @@ ecosystem in python  (numpy, torch, torchvision, scipy, scikit-image).
 See http://github.com/sylvainprigent/sdeconv for complete documentation.
 """
 
-__version__ = '1.0.1'
+__version__ = '1.0.3'
 
 __all__ = []
