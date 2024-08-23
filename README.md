@@ -34,7 +34,7 @@ python -m pip install sdeconv --upgrade
 
 ## Library installation from source
 
-This install is for developers or people who want the last features in the ``main`` branch.
+This installation is for developers or people who want the last features in the ``main`` branch.
 
 1. Install an [Anaconda](https://www.anaconda.com/download/) distribution of Python -- Choose **Python 3.9** and your operating system. Note you might need to use an anaconda prompt if you did not add anaconda to the path.
 2. Open an anaconda prompt / command prompt with `conda` for **python 3** in the path
