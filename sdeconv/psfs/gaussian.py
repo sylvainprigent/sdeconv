@@ -8,27 +8,25 @@ from .interface import SPSFGenerator
 class SPSFGaussian(SPSFGenerator):
     """Generate a Gaussian PSF
 
-    Parameters
-    ----------
-    sigma: tuple
-        Radius of the Gaussian in each dimension
-    shape: tuple
-        Size of the PSF array in each dimension
-
+    :param sigma: width of the PSF. [Z, Y, X] in 3D, [Y, X] in 2D
+    :param shape: Shape of the PSF support image. [Z, Y, X] in 3D, [Y, X] in 2D
     """
-    def __init__(self, sigma, shape):
+    def __init__(self,
+                 sigma: tuple[float, float] | tuple[float, float, float],
+                 shape: tuple[int, int] | tuple[int, int, int]):
         super().__init__()
         self.sigma = sigma
         self.shape = shape
         self.psf_ = None
 
     @staticmethod
-    def _normalize_inputs(sigma, shape):
+    def _normalize_inputs(sigma: tuple[float, float] | tuple[float, float, float],
+                          shape: tuple[int, int, int] | tuple[int, int, int]):
         if len(shape) == 3 and shape[0] == 1:
             return sigma[1:], shape[1:]
         return sigma, shape
 
-    def __call__(self):
+    def __call__(self) -> torch.Tensor:
         self.sigma, self.shape = SPSFGaussian._normalize_inputs(self.sigma, self.shape)
         """Calculate the PSF image"""
         if len(self.shape) == 2:
@@ -50,9 +48,9 @@ class SPSFGaussian(SPSFGenerator):
             x_0 = math.floor(self.shape[2] / 2)
             y_0 = math.floor(self.shape[1] / 2)
             z_0 = math.floor(self.shape[0] / 2)
-            sigma_x2 = 0.5 / self.sigma[2] * self.sigma[2]
-            sigma_y2 = 0.5 / self.sigma[1] * self.sigma[1]
-            sigma_z2 = 0.5 / self.sigma[0] * self.sigma[0]
+            sigma_x2 = 0.5 / (self.sigma[2] * self.sigma[2])
+            sigma_y2 = 0.5 / (self.sigma[1] * self.sigma[1])
+            sigma_z2 = 0.5 / (self.sigma[0] * self.sigma[0])
 
             zzz, yyy, xxx = torch.meshgrid(torch.arange(0, self.shape[0]),
                                            torch.arange(0, self.shape[1]),
@@ -68,7 +66,15 @@ class SPSFGaussian(SPSFGenerator):
         return self.psf_
 
 
-def spsf_gaussian(sigma, shape):
+def spsf_gaussian(sigma: tuple[float, float] | tuple[float, float, float],
+                  shape: tuple[int, int] | tuple[int, int, int]
+                  ) -> torch.Tensor:
+    """Generate a Gaussian PSF
+
+    :param sigma: width of the PSF. [Z, Y, X] in 3D, [Y, X] in 2D,
+    :param shape: Shape of the PSF support image. [Z, Y, X] in 3D, [Y, X] in 2D,
+    :return: The PSF image
+    """
     filter_ = SPSFGaussian(sigma, shape)
     return filter_()
 

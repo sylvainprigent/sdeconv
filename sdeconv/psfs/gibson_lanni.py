@@ -2,10 +2,6 @@
 
 This implementation is an adaptation of https://kmdouglass.github.io/posts/implementing-a-fast-gibson-lanni-psf-solver-in-python/
 
-Classes
--------
-SPSFGibsonLanni
-
 """
 from math import sqrt
 import numpy as np
@@ -21,46 +17,41 @@ from .interface import SPSFGenerator
 class SPSFGibsonLanni(SPSFGenerator):
     """Generate a Gibson-Lanni PSF
 
-    Parameters
-    ----------
-    shape: tuple
-        Size of the PSF array in each dimension
-    NA: float
-        Numerical aperture
-    wavelength: float
-        Wavelength in microns
-    M: float
-        Magnification
-    ns: float
-        Specimen refractive index (RI)
-    ng0: float
-        Coverslip RI design value
-    ng: float
-        coverslip RI experimental value
-    ni0: float
-        Immersion medium RI design value
-    ni: float
-        immersion medium RI experimental value
-    ti0: float
-        microns, working distance (immersion medium thickness) design value
-    tg0: float
-        microns, coverslip thickness design value
-    tg: float
-        microns, coverslip thickness experimental value
-    res_lateral: float
-        Lateral resolution in microns
-    res_axial: float
-        Axial resolution in microns
-    pZ: float
-        microns, particle distance from coverslip
-    use_square: bool
-        If true, calculate the square of the Gibson-Lanni model to simulate a pinhole. It then gives
-        a PSF for a confocal image
-
+    :param shape: Size of the PSF array in each dimension [(Z), Y, X],
+    :param NA: Numerical aperture,
+    :param wavelength: Wavelength in microns,
+    :param M: Magnification,
+    :param ns: Specimen refractive index (RI),
+    :param ng0: Coverslip RI design value,
+    :param ng: Coverslip RI experimental value,
+    :param ni0: Immersion medium RI design value,
+    :param ni: Immersion medium RI experimental value,
+    :param ti0: microns, working distance (immersion medium thickness) design value,
+    :param tg0: microns, coverslip thickness design value,
+    :param tg: microns, coverslip thickness experimental value,
+    :param res_lateral: Lateral resolution in microns,
+    :param res_axial: Axial resolution in microns,
+    :param pZ: microns, particle distance from coverslip
+    :param use_square: If true, calculate the square of the Gibson-Lanni model to simulate a
+                       pinhole. It then gives a PSF for a confocal image
     """
-    def __init__(self, shape, NA=1.4, wavelength=0.610, M=100, ns=1.33,
-                 ng0=1.5, ng=1.5, ni0=1.5, ni=1.5, ti0=150, tg0=170, tg=170,
-                 res_lateral=0.1, res_axial=0.25, pZ=0, use_square=False):
+    def __init__(self,
+                 shape: tuple[int, int] | tuple[int, int, int],
+                 NA: float = 1.4,
+                 wavelength: float = 0.610,
+                 M: float = 100,
+                 ns: float = 1.33,
+                 ng0: float = 1.5,
+                 ng: float = 1.5,
+                 ni0: float = 1.5,
+                 ni: float = 1.5,
+                 ti0: float = 150,
+                 tg0: float = 170,
+                 tg: float = 170,
+                 res_lateral: float = 0.1,
+                 res_axial: float = 0.25,
+                 pZ: float = 0,
+                 use_square: bool = False):
         super().__init__()
         self.shape = shape
 
@@ -87,13 +78,14 @@ class SPSFGibsonLanni(SPSFGenerator):
         # Precision control
         num_basis = 100  # Number of rescaled Bessels that approximate the phase function
         num_samples = 1000  # Number of pupil samples along radial direction
-        oversampling = 2  # Defines the upsampling ratio on the image space grid for computations
+        oversampling = 2  # Defines the sampling ratio on the image space grid for computations
 
         size_x = self.shape[2]
         size_y = self.shape[1]
         size_z = self.shape[0]
         min_wavelength = 0.436  # microns
-        scaling_factor = self.NA * (3 * np.arange(1, num_basis + 1) - 2) * min_wavelength / self.wavelength
+        scaling_factor = (
+                self.NA * (3 * np.arange(1, num_basis + 1) - 2) * min_wavelength / self.wavelength)
 
         # Place the origin at the center of the final PSF array
         x0 = (size_x - 1) / 2
@@ -110,7 +102,7 @@ class SPSFGibsonLanni(SPSFGenerator):
         z = self.res_axial * np.arange(-size_z / 2, size_z / 2) + self.res_axial / 2
 
         # Define the wavefront aberration
-        OPDs = self.pZ * np.sqrt(self.ns * self.ns - self.NA * self.NA * rho * rho)  # OPD in the sample
+        OPDs = self.pZ * np.sqrt(self.ns * self.ns - self.NA * self.NA * rho * rho)
         OPDi = (z.reshape(-1, 1) + self.ti0) * np.sqrt(self.ni * self.ni - self.NA * self.NA * rho * rho) - self.ti0 * np.sqrt(
             self.ni0 * self.ni0 - self.NA * self.NA * rho * rho)  # OPD in the immersion medium
         OPDg = self.tg * np.sqrt(self.ng * self.ng - self.NA * self.NA * rho * rho) - self.tg0 * np.sqrt(
@@ -170,9 +162,42 @@ class SPSFGibsonLanni(SPSFGenerator):
         return torch.from_numpy(self.psf_).to(SSettings.instance().device)
 
 
-def spsf_gibson_lanni(shape, NA=1.4, wavelength=0.610, M=100, ns=1.33,
-                      ng0=1.5, ng=1.5, ni0=1.5, ni=1.5, ti0=150, tg0=170, tg=170,
-                      res_lateral=0.1, res_axial=0.25, pZ=0, use_square=False):
+def spsf_gibson_lanni(shape: tuple[int, int] | tuple[int, int, int],
+                      NA: float = 1.4,
+                      wavelength: float = 0.610,
+                      M: float = 100,
+                      ns: float = 1.33,
+                      ng0: float = 1.5,
+                      ng: float = 1.5,
+                      ni0: float = 1.5,
+                      ni: float = 1.5,
+                      ti0: float = 150,
+                      tg0: float = 170,
+                      tg: float = 170,
+                      res_lateral: float = 0.1,
+                      res_axial: float = 0.25,
+                      pZ: float = 0,
+                      use_square: bool = False):
+    """Generate a Gibson-Lanni PSF
+
+    :param shape: Size of the PSF array in each dimension [(Z), Y, X],
+    :param NA: Numerical aperture,
+    :param wavelength: Wavelength in microns,
+    :param M: Magnification,
+    :param ns: Specimen refractive index (RI),
+    :param ng0: Coverslip RI design value,
+    :param ng: Coverslip RI experimental value,
+    :param ni0: Immersion medium RI design value,
+    :param ni: Immersion medium RI experimental value,
+    :param ti0: microns, working distance (immersion medium thickness) design value,
+    :param tg0: microns, coverslip thickness design value,
+    :param tg: microns, coverslip thickness experimental value,
+    :param res_lateral: Lateral resolution in microns,
+    :param res_axial: Axial resolution in microns,
+    :param pZ: microns, particle distance from coverslip
+    :param use_square: If true, calculate the square of the Gibson-Lanni model to simulate a
+                       pinhole. It then gives a PSF for a confocal image
+    """
     filter_ = SPSFGibsonLanni(shape, NA, wavelength, M, ns,
                               ng0, ng, ni0, ni, ti0, tg0, tg,
                               res_lateral, res_axial, pZ, use_square)

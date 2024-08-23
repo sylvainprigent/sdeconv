@@ -1,34 +1,32 @@
 """Implements the Lorentz Point Spread Function generator"""
 import math
 import torch
-from sdeconv.core import SSettings
+from ..core import SSettings
 from .interface import SPSFGenerator
 
 
 class SPSFLorentz(SPSFGenerator):
     """Generate a Lorentz PSF
 
-    Parameters
-    ----------
-    gamma: tuple
-        Radius of the Lorentz in each dimension
-    shape: tuple
-        Size of the PSF array in each dimension
-
+    :param gamma: Width of the Lorentz in each dimension [(Z), Y, X]
+    :param shape: Size of the PSF image in each dimension [(Z), Y, X]
     """
-    def __init__(self, gamma, shape):
+    def __init__(self,
+                 gamma: tuple[float, float] | tuple[float, float, float],
+                 shape: tuple[int, int, int] | tuple[int, int, int]):
         super().__init__()
         self.gamma = gamma
         self.shape = shape
         self.psf_ = None
 
     @staticmethod
-    def _normalize_inputs(gamma, shape):
+    def _normalize_inputs(gamma: tuple[float, float] | tuple[float, float, float],
+                          shape: tuple[int, int, int] | tuple[int, int, int]):
         if len(shape) == 3 and shape[0] == 1:
             return gamma[1:], shape[1:]
         return gamma, shape
 
-    def __call__(self):
+    def __call__(self) -> torch.Tensor:
         self.gamma, self.shape = SPSFLorentz._normalize_inputs(self.gamma, self.shape)
         """Calculate the PSF image"""
         if len(self.shape) == 2:
@@ -39,8 +37,8 @@ class SPSFLorentz(SPSFGenerator):
             xx_, yy_ = torch.meshgrid(torch.arange(0, self.shape[0]),
                                       torch.arange(0, self.shape[1]),
                                       indexing='ij')
-            self.psf_ = 1 / ( 1 + torch.pow((xx_ - x_0)/(0.5*self.gamma[0]), 2) +
-                              torch.pow((yy_ - y_0)/(0.5*self.gamma[1]), 2)  )
+            self.psf_ = 1 / (1 + torch.pow((xx_ - x_0)/(0.5*self.gamma[0]), 2) +
+                             torch.pow((yy_ - y_0)/(0.5*self.gamma[1]), 2))
             self.psf_ = self.psf_ / torch.sum(self.psf_)
         elif len(self.shape) == 3:
             self.psf_ = torch.zeros(self.shape).to(SSettings.instance().device)
@@ -51,16 +49,24 @@ class SPSFLorentz(SPSFGenerator):
                                            torch.arange(0, self.shape[1]),
                                            torch.arange(0, self.shape[2]),
                                            indexing='ij')
-            self.psf_ = 1 / ( 1 + torch.pow((xxx - x_0)/(0.5*self.gamma[2]), 2) +
-                              torch.pow((yyy - y_0)/(0.5*self.gamma[1]), 2) +
-                              torch.pow((zzz - z_0)/(0.5*self.gamma[0]), 2))
+            self.psf_ = 1 / (1 + torch.pow((xxx - x_0)/(0.5*self.gamma[2]), 2) +
+                             torch.pow((yyy - y_0)/(0.5*self.gamma[1]), 2) +
+                             torch.pow((zzz - z_0)/(0.5*self.gamma[0]), 2))
             self.psf_ = self.psf_ / torch.sum(self.psf_)
         else:
             raise Exception('SPSFLorentz: can generate only 2D or 3D PSFs')
         return self.psf_
 
 
-def spsf_lorentz(gamma, shape):
+def spsf_lorentz(gamma: tuple[float, float] | tuple[float, float, float],
+                 shape: tuple[int, int, int] | tuple[int, int, int]
+                 ) -> torch.Tensor:
+    """Generate a Lorentz PSF
+
+    :param gamma: Width of the Lorentz in each dimension [(Z), Y, X],
+    :param shape: Size of the PSF image in each dimension [(Z), Y, X],
+    :return: The PSF mage
+    """
     filter_ = SPSFLorentz(gamma, shape)
     return filter_()
 

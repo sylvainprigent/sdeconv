@@ -9,20 +9,28 @@ from ._utils import pad_2d, pad_3d
 class SRichardsonLucy(SDeconvFilter):
     """Implements the Richardson-Lucy deconvolution
 
-    Parameters
-    ----------
-    psf: Tensor
-        Point spread function
-
+    :param psf: Point spread function
+    :param niter: Number of iterations
+    :param pad: image padding size
     """
-    def __init__(self, psf, niter=30, pad=0):
+    def __init__(self,
+                 psf: torch.Tensor,
+                 niter: int = 30,
+                 pad: int | tuple[int, int] | tuple[int, int, int] = 0):
         super().__init__()
         self.psf = psf
         self.niter = niter
         self.pad = pad
 
     @staticmethod
-    def _resize_psf(psf, width, height):
+    def _resize_psf(psf, width, height) -> torch.Tensor:
+        """Resize the PSF to match the image size for Fourier transform
+
+        :param psf: Point spread function
+        :param width: Width of the resized PSF
+        :param height: Height of the resized PSF
+        :return: The resized PSF
+        """
         kernel = torch.zeros((width, height))
         x_start = int(width / 2 - psf.shape[0] / 2) + 1
         y_start = int(height / 2 - psf.shape[1] / 2) + 1
@@ -30,24 +38,18 @@ class SRichardsonLucy(SDeconvFilter):
         return kernel
 
     def __call__(self, image):
+        """Apply the Richardson-Lucy deconvolution"""
         if image.ndim == 2:
             return self._deconv_2d(image)
         if image.ndim == 3:
             return self._deconv_3d(image)
         raise Exception('Richardson-Lucy can only deblur 2D or 3D tensors')
 
-    def _deconv_2d(self, image):
+    def _deconv_2d(self, image: torch.Tensor) -> torch.Tensor:
         """Implements Richardson-Lucy for 2D images
 
-        Parameters
-        ----------
-        image: torch.Tensor
-            2D image tensor
-
-        Returns
-        -------
-        torch.Tensor of the 2D deblurred image
-
+        :param image: 2D image tensor
+        :return: 2D deblurred image
         """
         image_pad, psf_pad, padding = pad_2d(image, self.psf / torch.sum(self.psf), self.pad)
 
@@ -71,18 +73,11 @@ class SRichardsonLucy(SDeconvFilter):
             return out_image[padding[0]:-padding[0], padding[1]:-padding[1]]
         return out_image
 
-    def _deconv_3d(self, image):
+    def _deconv_3d(self, image: torch.Tensor) -> torch.Tensor:
         """Implements Richardson-Lucy for 3D images
 
-        Parameters
-        ----------
-        image: torch.Tensor
-            2D image tensor
-
-        Returns
-        -------
-        torch.Tensor of the 3D deblurred image
-
+        :param image: 3D image tensor
+        :return: 3D deblurred image
         """
         image_pad, psf_pad, padding = pad_3d(image, self.psf / torch.sum(self.psf), self.pad)
 
@@ -111,8 +106,19 @@ class SRichardsonLucy(SDeconvFilter):
         return out_image
 
 
-def srichardsonlucy(image, psf, niter=30, pad=13):
-    """Convenient function to call the SRichardsonLucy using numpy array"""
+def srichardsonlucy(image: torch.Tensor,
+                    psf: torch.Tensor,
+                    niter: int = 30,
+                    pad: int | tuple[int, int] | tuple[int, int, int] = 0
+                    ) -> torch.Tensor:
+    """Convenient function to call the SRichardsonLucy using numpy array
+
+    :param image: Image to deblur
+    :param psf: Point spread function
+    :param niter: Number of iterations
+    :param pad: image padding size
+    :return: the deblurred image
+    """
     if isinstance(image, np.ndarray):
         psf_ = torch.tensor(psf).to(SSettings.instance().device)
     else:

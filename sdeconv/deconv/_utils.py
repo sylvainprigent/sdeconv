@@ -3,19 +3,12 @@ import torch
 from sdeconv.core import SSettings
 
 
-def resize_psf_2d(image, psf):
+def resize_psf_2d(image: torch.Tensor, psf: torch.Tensor) -> torch.Tensor:
     """Resize a 2D PSF image to the target image size
 
-    Parameters
-    ----------
-    image: torch.Tensor
-        Reference image tensor
-    psf: torch.Tensor
-        Point Spread Function tensor to resize
-
-    Returns
-    -------
-    the psf tensor padded to get the same shape as image
+    :param image: Reference image tensor,
+    :param psf: Point Spread Function tensor to resize,
+    :return: the psf tensor padded to get the same shape as image
 
     """
     kernel = torch.zeros(image.shape).to(SSettings.instance().device)
@@ -25,20 +18,12 @@ def resize_psf_2d(image, psf):
     return kernel
 
 
-def resize_psf_3d(image, psf):
+def resize_psf_3d(image: torch.Tensor, psf: torch.Tensor) -> torch.Tensor:
     """Resize a 3D PSF image to the target image size
 
-    Parameters
-    ----------
-    image: torch.Tensor
-        Reference image tensor
-    psf: torch.Tensor
-        Point Spread Function tensor to resize
-
-    Returns
-    -------
-    the psf tensor padded to get the same shape as image
-
+    :param image: Reference image tensor
+    :param psf: Point Spread Function tensor to resize
+    :returns: the psf tensor padded to get the same shape as image
     """
     kernel = torch.zeros(image.shape).to(SSettings.instance().device)
     x_start = int(image.shape[0] / 2 - psf.shape[0] / 2) + 1
@@ -49,22 +34,16 @@ def resize_psf_3d(image, psf):
     return kernel
 
 
-def pad_2d(image, psf, pad):
+def pad_2d(image: torch.Tensor,
+           psf: torch.Tensor,
+           pad: int | tuple[int, int]
+           ) -> tuple[torch.Tensor, torch.Tensor, int | tuple[int, int]]:
     """Pad an image and it PSF for deconvolution
 
-    Parameters
-    ----------
-    image: tensor
-        2D image tensor
-    psf: tensor
-        2D Point Spread Function.
-    pad: int/tuple
-        Padding in each dimension.
-
-    Returns
-    -------
-    image, psf, padding: padded versions of the image and the PSF, plus the padding tuple
-
+    :param image: 2D image tensor
+    :param psf: 2D Point Spread Function.
+    :param pad: Padding in each dimension.
+    :return image: psf, padding: padded versions of the image and the PSF, plus the padding tuple
     """
     padding = pad
     if isinstance(pad, tuple) and len(pad) != image.ndim:
@@ -86,22 +65,16 @@ def pad_2d(image, psf, pad):
     return image_pad, psf_pad, padding
 
 
-def pad_3d(image, psf, pad):
+def pad_3d(image: torch.Tensor,
+           psf: torch.Tensor,
+           pad: int | tuple[int, int, int]
+           ) -> tuple[torch.Tensor, torch.Tensor, int | tuple[int, int, int]]:
     """Pad an image and it PSF for deconvolution
 
-    Parameters
-    ----------
-    image: tensor
-        2D image tensor
-    psf: tensor
-        2D Point Spread Function.
-    pad: int/tuple
-        Padding in each dimension.
-
-    Returns
-    -------
-    image, psf, padding: padded versions of the image and the PSF, plus the padding tuple
-
+    :param image: 2D image tensor
+    :param psf: 2D Point Spread Function.
+    :param pad: Padding in each dimension.
+    :return: image, psf, padding: padded versions of the image and the PSF, plus the padding tuple
     """
     padding = pad
     if isinstance(pad, tuple) and len(pad) != image.ndim:
@@ -127,20 +100,12 @@ def pad_3d(image, psf, pad):
     return image_pad, psf_pad, padding
 
 
-def unpad_3d(image, padding):
+def unpad_3d(image: torch.Tensor, padding: tuple[int, int, int]) -> torch.Tensor:
     """Remove the padding of an image
 
-    Parameters
-    ----------
-    image: torch.Tensor
-        3D image to unpad
-    padding: list
-        Padding in each dimension
-
-    Returns
-    -------
-    a torch.Tensor of the unpadded image
-
+    :param image: 3D image to un-pad
+    :param padding: Padding in each dimension
+    :return: a torch.Tensor of the un-padded image
     """
     return image[padding[0]:-padding[0],
                  padding[1]:-padding[1],

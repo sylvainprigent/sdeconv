@@ -6,18 +6,11 @@ from .interface import SDeconvFilter
 from ._utils import pad_2d, pad_3d, unpad_3d, psf_parameter
 
 
-def laplacian_2d(shape):
+def laplacian_2d(shape: tuple[int, int]) -> torch.Tensor:
     """Define the 2D laplacian matrix
 
-    Parameters
-    ----------
-    shape: tuple
-        2D image shape
-
-    Returns
-    -------
-    torch.Tensor with with size defined by shape and laplacian coefficients at it center
-
+    :param shape: 2D image shape
+    :return: torch.Tensor with size defined by shape and laplacian coefficients at it center
     """
     image = torch.zeros(shape).to(SSettings.instance().device)
 
@@ -32,17 +25,11 @@ def laplacian_2d(shape):
     return image
 
 
-def laplacian_3d(shape):
+def laplacian_3d(shape: tuple[int, int]) -> torch.Tensor:
     """Define the 3D laplacian matrix
 
-    Parameters
-    ----------
-    shape: tuple
-        3D image shape
-
-    Returns
-    -------
-    torch.Tensor with with size defined by shape and laplacian coefficients at it center
+    :param shape: 3D image shape
+    :return: torch.Tensor with size defined by shape and laplacian coefficients at it center
 
     """
     image = torch.zeros(shape).to(SSettings.instance().device)
@@ -62,43 +49,34 @@ def laplacian_3d(shape):
 
 
 class SWiener(SDeconvFilter):
-    """Apply a gaussian filter
+    """Apply a Wiener deconvolution
 
-    Parameters
-    ----------
-    psf: Tensor
-        Point spread function
-    beta: float
-        Regularisation weight
-    pad: int/tuple
-        Padding in each dimension
-
+    :param psf: Point spread function
+    :param beta: Regularisation weight
+    :param pad: Padding in each dimension
     """
-    def __init__(self, psf, beta=1e-5, pad=0):
+    def __init__(self,
+                 psf: torch.Tensor,
+                 beta: float = 1e-5,
+                 pad: int | tuple[int, int] | tuple[int, int, int] = 0):
         super().__init__()
         self.psf = psf
         self.beta = beta
         self.pad = pad
 
-    def __call__(self, image):
+    def __call__(self, image: torch.Tensor) -> torch.Tensor:
+        """Run the deconvolution"""
         if image.ndim == 2:
             return self._wiener_2d(image)
         if image.ndim == 3:
             return self._wiener_3d(image)
         raise Exception('Wiener can only deblur 2D or 3D tensors')
 
-    def _wiener_2d(self, image):
+    def _wiener_2d(self, image: torch.Tensor) -> torch.Tensor:
         """Compute the 2D wiener deconvolution
 
-        Parameters
-        ----------
-        image: torch.Tensor
-            2D image tensor
-
-        Returns
-        -------
-        torch.Tensor of the 2D deblurred image
-
+        :param image: 2D image tensor
+        :return: torch.Tensor of the 2D deblurred image
         """
         image_pad, psf_pad, padding = pad_2d(image, self.psf / torch.sum(self.psf), self.pad)
 
@@ -114,18 +92,11 @@ class SWiener(SDeconvFilter):
             return out_image[padding[0]: -padding[0], padding[1]: -padding[1]]
         return out_image
 
-    def _wiener_3d(self, image):
-        """Compute the 2D wiener deconvolution
+    def _wiener_3d(self, image: torch.Tensor) -> torch.Tensor:
+        """Compute the 3D wiener deconvolution
 
-        Parameters
-        ----------
-        image: torch.Tensor
-            2D image tensor
-
-        Returns
-        -------
-        torch.Tensor of the 2D deblurred image
-
+        :param image: 2D image tensor
+        :return: torch.Tensor of the 2D deblurred image
         """
         image_pad, psf_pad, padding = pad_3d(image, self.psf / torch.sum(self.psf), self.pad)
 
@@ -144,8 +115,19 @@ class SWiener(SDeconvFilter):
         return out_image
 
 
-def swiener(image, psf, beta=1e-5, pad=0):
-    """Convenient function to call the SWiener"""
+def swiener(image: torch.Tensor,
+            psf: torch.Tensor,
+            beta: float = 1e-5,
+            pad: int | tuple[int, int] | tuple[int, int, int] = 0
+            ):
+    """Convenient function to call the SWiener
+
+    :param image: Image to deblur
+    :param psf: Point spread function
+    :param beta: Regularisation weight
+    :param pad: Padding in each dimension
+    :return: the deblurred image
+    """
     if isinstance(image, np.ndarray):
         psf_ = torch.tensor(psf).to(SSettings.instance().device)
     else:

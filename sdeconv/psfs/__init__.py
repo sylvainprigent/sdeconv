@@ -1,6 +1,11 @@
 """Module that implements Point Spread Function generators"""
-from .gaussian import SPSFGaussian
-from .gibson_lanni import SPSFGibsonLanni
-from .lorentz import SPSFLorentz
+from .gaussian import SPSFGaussian, spsf_gaussian
+from .gibson_lanni import SPSFGibsonLanni, spsf_gibson_lanni
+from .lorentz import SPSFLorentz, spsf_lorentz
 
-__all__ = ['SPSFGaussian', 'SPSFGibsonLanni', 'SPSFLorentz']
+__all__ = ['SPSFGaussian',
+           'spsf_gaussian',
+           'SPSFGibsonLanni',
+           'spsf_gibson_lanni',
+           'SPSFLorentz',
+           'spsf_lorentz']
