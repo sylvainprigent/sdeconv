@@ -139,7 +139,11 @@ class Spitfire(SDeconvFilter):
         self.loss_ = None
 
     def __call__(self, image: torch.Tensor) -> torch.Tensor:
-        """Run the Spitfire deconvolution"""
+        """Run the Spitfire deconvolution
+        
+        :param image: Blurry image for a single channel time point [(Z) Y X]
+        :return: deblurred image [(Z) Y X]
+        """
         if image.ndim == 2:
             return self.run_2d(image)
         if image.ndim == 3:

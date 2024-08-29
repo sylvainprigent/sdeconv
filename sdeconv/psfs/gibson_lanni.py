@@ -74,7 +74,11 @@ class SPSFGibsonLanni(SPSFGenerator):
         # output
         self.psf_ = None
 
-    def __call__(self):
+    def __call__(self) -> torch.Tensor:
+        """Calculate the PSF
+        
+        :return: The PSF image as a Tensor
+        """
         # Precision control
         num_basis = 100  # Number of rescaled Bessels that approximate the phase function
         num_samples = 1000  # Number of pupil samples along radial direction
@@ -177,7 +181,8 @@ def spsf_gibson_lanni(shape: tuple[int, int] | tuple[int, int, int],
                       res_lateral: float = 0.1,
                       res_axial: float = 0.25,
                       pZ: float = 0,
-                      use_square: bool = False):
+                      use_square: bool = False
+                      ) -> torch.Tensor:
     """Generate a Gibson-Lanni PSF
 
     :param shape: Size of the PSF array in each dimension [(Z), Y, X],

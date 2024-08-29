@@ -30,7 +30,6 @@ def laplacian_3d(shape: tuple[int, int]) -> torch.Tensor:
 
     :param shape: 3D image shape
     :return: torch.Tensor with size defined by shape and laplacian coefficients at it center
-
     """
     image = torch.zeros(shape).to(SSettings.instance().device)
 
@@ -65,7 +64,11 @@ class SWiener(SDeconvFilter):
         self.pad = pad
 
     def __call__(self, image: torch.Tensor) -> torch.Tensor:
-        """Run the deconvolution"""
+        """Run the Wiener deconvolution
+        
+        :param image: Blurry image for a single channel time point [(Z) Y X]
+        :return: deblurred image [(Z) Y X]
+        """
         if image.ndim == 2:
             return self._wiener_2d(image)
         if image.ndim == 3:
@@ -120,12 +123,12 @@ def swiener(image: torch.Tensor,
             beta: float = 1e-5,
             pad: int | tuple[int, int] | tuple[int, int, int] = 0
             ):
-    """Convenient function to call the SWiener
+    """Convenient function to call the SWiener on numpy array
 
-    :param image: Image to deblur
-    :param psf: Point spread function
-    :param beta: Regularisation weight
-    :param pad: Padding in each dimension
+    :param image: Image to deblur,
+    :param psf: Point spread function,
+    :param beta: Regularisation weight,
+    :param pad: Padding in each dimension,
     :return: the deblurred image
     """
     if isinstance(image, np.ndarray):

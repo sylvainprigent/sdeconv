@@ -6,16 +6,11 @@ from skimage.io import imsave
 from sdeconv.api import SDeconvAPI
 
 
-def add_args_to_parser(parser, api):
-    """Add an argument to the parser
+def add_args_to_parser(parser: argparse.ArgumentParser, api: SDeconvAPI):
+    """Add all the parameters available in the API as an argument in the parser
 
-    Parameters
-    ----------
-    parser: argparse.ArgumentParser
-        Argument parser object
-    api: SDeconvAPI
-        SDeconv Application Programming Interface object
-
+    :param parser: Argument parser instance
+    :param api: SDeconv Application Programming Interface instance
     """
     for filter_name in api.filters.get_keys():
         params = api.psfs.get_parameters(filter_name)

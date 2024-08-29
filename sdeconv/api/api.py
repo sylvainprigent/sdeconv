@@ -1,19 +1,17 @@
-"""Application programing interface for SDeconv
-
-Classes
--------
-SDeconvAPI
-
-"""
+"""Application programing interface for SDeconv"""
 
 import os
 import importlib
 import torch
+
+from ..psfs import SPSFGenerator
+from ..deconv import SDeconvFilter
 from .factory import SDeconvModuleFactory, SDeconvFactoryError
 
 
 class SDeconvAPI:
     """Main API to call SDeconv methods.
+
     The API implements a factory that instantiate the deconvolution
     """
     def __init__(self):
@@ -27,7 +25,12 @@ class SDeconvAPI:
             self.psfs.register(mod.metadata['name'], mod.metadata)
 
     @staticmethod
-    def _find_modules(directory):
+    def _find_modules(directory: str) -> list[str]:
+        """Search sub modules in a directory
+        
+        :param directory: Directory to search
+        :return: The founded module names 
+        """
         path = os.path.abspath(os.path.dirname(__file__))
         path = os.path.dirname(path)
         modules = []
@@ -42,31 +45,23 @@ class SDeconvAPI:
                     modules.append(f"sdeconv.{parent}.{module_path.split('.')[0]}")
         return modules
 
-    def filter(self, name, **kwargs):
+    def filter(self, name: str, **kwargs) -> SDeconvFilter | None:
         """Instantiate a deconvolution filter
 
-        Parameters
-        ----------
-        name: str
-            Unique name of the filter to instantiate
-        kwargs: dict
-            arguments of the filter
-
+        :param name: Unique name of the filter to instantiate
+        :param kwargs: arguments of the filter
+        :return: An instance of the filter
         """
         if name == 'None':
             return None
         return self.filters.get(name, **kwargs)
 
-    def psf(self, method_name, **kwargs):
+    def psf(self, method_name, **kwargs) -> SPSFGenerator:
         """Instantiate a psf generator
 
-        Parameters
-        ----------
-        method_name: str
-            name of the PSF generator to instantiate
-        kwargs: dict
-            parameters of the PSF generator
-
+        :param method_name: name of the PSF generator
+        :param kwargs: parameters of the PSF generator
+        :return: An instance of the generator
         """
         if method_name == 'None':
             return None
@@ -75,35 +70,30 @@ class SDeconvAPI:
             return filter_
         raise SDeconvFactoryError(f'The method {method_name} is not a PSF generator')
 
-    def generate_psf(self, method_name, **kwargs):
+    def generate_psf(self, method_name, **kwargs) -> torch.Tensor:
         """Generates a Point SPread Function
 
-        Parameters
-        ----------
-        method_name: str
-            Name of the PSF Generator method
-        kwargs: dict
-            Parameters of the PSF generator
-
+        :param method_name: Name of the PSF Generator method
+        :param kwargs: Parameters of the PSF generator
+        :return: The generated PSF
         """
         # print('generate psf args=', **kwargs)
         generator = self.psf(method_name, **kwargs)
         return generator()
 
-    def deconvolve(self, image, method_name, plane_by_plane, **kwargs):
+    def deconvolve(self, 
+                   image: torch.Tensor, 
+                   method_name: str, 
+                   plane_by_plane: bool, 
+                   **kwargs
+                   ) -> torch.Tensor:
         """Run the deconvolution on an image
 
-        Parameters
-        ----------
-        image: torch.Tensor
-            Image to deconvolve. Can be 2D to 5D
-        method_name: str
-            Name of the deconvolution method to use
-        plane_by_plane: bool
-            True to process the image plane by plane when dimension is more than 2
-        kwargs: dict
-            Parameters of the deconvolution method
-
+        :param image: Image to deconvolve. Can be 2D to 5D
+        :param method_name: Name of the deconvolution method to use
+        :param plane_by_plane: True to process the image plane by plane when dimension is more than 2
+        :param kwargs: Parameters of the deconvolution method
+        :return: The deblurred image
         """
         filter_ = self.filter(method_name, **kwargs)
         if filter_.type == 'SDeconvFilter':
@@ -111,16 +101,12 @@ class SDeconvAPI:
         raise SDeconvFactoryError(f'The method {method_name} is not a deconvolution filter')
 
     @staticmethod
-    def _deconv_3d_by_plane(image, filter_):
+    def _deconv_3d_by_plane(image: torch.Tensor, filter_: SDeconvFilter) -> torch.Tensor:
         """Call the 3D deconvolution plane by plane
 
-        Parameters
-        ----------
-        image: torch.Tensor
-            3D image tensor
-        filter_: class
-            deconvolution class
-
+        :param image: 3D image tensor
+        :param filter_: deconvolution class
+        :return: The deblurred image
         """
         out_image = torch.zeros(image.shape)
         for i in range(image.shape[0]):
@@ -128,16 +114,12 @@ class SDeconvAPI:
         return out_image
 
     @staticmethod
-    def _deconv_4d(image, filter_):
+    def _deconv_4d(image: torch.Tensor, filter_: SDeconvFilter) -> torch.Tensor:
         """Call the 3D+t deconvolution
 
-        Parameters
-        ----------
-        image: torch.Tensor
-            3D+t image tensor
-        filter_: class
-            deconvolution class
-
+        :param image: 3D+t image tensor
+        :param filter_: deconvolution class
+        :return: The deblurred stack
         """
         out_image = torch.zeros(image.shape)
         for i in range(image.shape[0]):
@@ -145,16 +127,12 @@ class SDeconvAPI:
         return out_image
 
     @staticmethod
-    def _deconv_4d_by_plane(image, filter_):
+    def _deconv_4d_by_plane(image: torch.Tensor, filter_: SDeconvFilter) -> torch.Tensor:
         """Call the 3D+t deconvolution plane by plane
 
-        Parameters
-        ----------
-        image: torch.Tensor
-            3D+t image tensor
-        filter_: class
-            deconvolution class
-
+        :param image: 3D+t image tensor
+        :param filter_: deconvolution class
+        :return: The deblurred stack
         """
         out_image = torch.zeros(image.shape)
         for i in range(image.shape[0]):
@@ -163,16 +141,12 @@ class SDeconvAPI:
         return out_image
 
     @staticmethod
-    def _deconv_5d(image, filter_):
+    def _deconv_5d(image: torch.Tensor, filter_: SDeconvFilter) -> torch.Tensor:
         """Call the 3D+t multi-channel deconvolution
 
-        Parameters
-        ----------
-        image: torch.Tensor
-            3D+t multi-channel image tensor
-        filter_: class
-            deconvolution class
-
+        :param image: 3D+t image tensor
+        :param filter_: deconvolution class
+        :return: The deblurred hyper-stack
         """
         out_image = torch.zeros(image.shape)
         for i in range(image.shape[0]):
@@ -181,16 +155,12 @@ class SDeconvAPI:
         return out_image
 
     @staticmethod
-    def _deconv_5d_by_plane(image, filter_):
+    def _deconv_5d_by_plane(image: torch.Tensor, filter_: SDeconvFilter) -> torch.Tensor:
         """Call the 3D+t multi-channel deconvolution plane by plane
 
-        Parameters
-        ----------
-        image: torch.Tensor
-            3D+t multi-channel image tensor
-        filter_: class
-            deconvolution class
-
+        :param image: 3D+t image tensor
+        :param filter_: deconvolution class
+        :return: The deblurred hyper-stack
         """
         out_image = torch.zeros(image.shape)
         for batch in range(image.shape[0]):
@@ -201,16 +171,15 @@ class SDeconvAPI:
         return out_image
 
     @staticmethod
-    def _deconv_dims(image, filter_, plane_by_plane=False):
+    def _deconv_dims(image: torch.Tensor, 
+                     filter_: SDeconvFilter, 
+                     plane_by_plane: bool = False):
         """Call the deconvolution method depending on the image dimension
 
-        Parameters
-        ----------
-        image: torch.Tensor
-            3D+t multi-channel image tensor
-        filter_: class
-            deconvolution class
-
+        :param image: 3D+t image tensor
+        :param filter_: deconvolution class
+        :param plane_by_plane: True to deblur third dimention as independent planes
+        :return: The deblurred image, stack or hyper-stack
         """
         out_image = None
         if image.ndim == 2:

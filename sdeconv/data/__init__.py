@@ -16,20 +16,14 @@ __all__ = ['celegans',
 legacy_data_dir = osp.abspath(osp.dirname(__file__))
 
 
-def _fetch(data_filename):
+def _fetch(data_filename: str) -> str:
     """Fetch a given data file from the local data dir.
 
     This function provides the path location of the data file given
     its name in the scikit-image repository.
 
-    Parameters
-    ----------
-    data_filename:
-        Name of the file in the scikit-bioimaging data dir
-
-    Returns
-    -------
-    Path of the local file as a python string.
+    :param data_filename: Name of the file in the scikit-bioimaging data dir,
+    :return: Path of the local file as a python string
     """
 
     filepath = os.path.join(legacy_data_dir, data_filename)
@@ -39,16 +33,11 @@ def _fetch(data_filename):
     raise FileExistsError("Cannot find the file:", filepath)
 
 
-def _load(filename):
+def _load(filename: str) -> np.ndarray:
     """Load an image file located in the data directory.
-    Parameters
-    ----------
-    filename : string
-        File name.
-    Returns
-    -------
-    img : ndarray
-        Image loaded from ``simglibpy.data_dir``.
+    
+    :param: filename: Path of the file to load.
+    :return: The data loaded in a numpy array
     """
     return torch.tensor(np.float32(imread(_fetch(filename)))).to(SSettings.instance().device)
 
@@ -56,47 +45,31 @@ def _load(filename):
 def celegans():
     """2D confocal (Airyscan) image of a c. elegans intestine.
 
-    Returns
-    -------
-    pollen : (310, 310) uint16 ndarray
-        2D confocal image of a C. elegans intestine.
+    :return: (310, 310) uint16 ndarray
     """
-
     return _load("celegans.tif")[3:-3, 3:-3]
 
 
 def pollen():
     """3D Pollen image.
 
-    Returns
-    -------
-    pollen : (32, 256, 256) uint16 ndarray
-        Pollen image.
+    :return: (32, 256, 256) uint16 ndarray
     """
-
     return _load("pollen.tif")
 
 
 def pollen_poison_noise_blurred():
     """3D Pollen image corrupted with Poisson noise and blurred .
 
-    Returns
-    -------
-    pollen : (32, 256, 256) uint16 ndarray
-        Corrupted pollen image.
+    :return: (32, 256, 256) uint16 ndarray
     """
-
     return _load("pollen_poisson_noise_blurred.tif")
 
 
 def pollen_psf():
     """3D PSF to deblur the pollen image.
 
-    Returns
-    -------
-    pollen : (32, 256, 256) uint16 ndarray
-        Corrupted pollen image.
+    :return: (32, 256, 256) uint16 ndarray
     """
-
     psf = _load("pollen_psf.tif")
     return psf / torch.sum(psf)

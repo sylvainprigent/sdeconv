@@ -1,15 +1,10 @@
-"""Implements factory for PSF and deconvolution modules
-
-Classes
--------
-SDeconvFactoryError
-SDeconvModuleFactory
-SDeconvModuleBuilder
-
-"""
+"""Implements factory for PSF and deconvolution modules"""
 
 import numpy as np
 import torch
+
+from ..psfs import SPSFGenerator
+from ..deconv import SDeconvFilter
 
 
 class SDeconvFactoryError(Exception):
@@ -21,43 +16,35 @@ class SDeconvModuleFactory:
     def __init__(self):
         self._data = {}
 
-    def register(self, key, metadata):
+    def register(self, key: str, metadata: dict[str, any]):
         """Register a new builder to the factory
 
-        Parameters
-        ----------
-        key: str
-            Name of the module to register
-        metadata: dict
-            Dictionary containing the filter metadata
-
+        :param key: Name of the module to register
+        :param metadata: Dictionary containing the filter metadata
         """
         self._data[key] = metadata
 
-    def get_parameters(self, key):
-        """Parameters getter method"""
+    def get_parameters(self, key: str) -> dict[str, any]:
+        """Parameters getter method
+        
+        :param key: Name of the module builder
+        :return: The module parameters
+        """
         return self._data[key]['inputs']
 
-    def get_keys(self):
+    def get_keys(self) -> list[str]:
         """Get the names of all the registered modules
 
-        Returns
-        -------
-        list: list of all the registered modules names
-
+        :return: The list of all the registered modules names
         """
         return self._data.keys()
 
-    def get(self, key, **kwargs):
+    def get(self, key: str, **kwargs) -> SPSFGenerator | SDeconvFilter:
         """Get an instance of the SDeconv module
 
-        Parameters
-        ----------
-        key: str
-            Name of the module to load
-        kwargs: dict
-            Dictionary of args for models parameters (ex: number of channels)
-
+        :param key: Name of the module to load
+        :param kwargs: Dictionary of args for models parameters (ex: number of channels)
+        :return: The instance of the module
         """
         metadata = self._data.get(key)
         if not metadata:
@@ -75,13 +62,12 @@ class SDeconvModuleBuilder:
     def __init__(self):
         self._instance = None
 
-    def get_instance(self, metadata, args):
+    def get_instance(self, metadata: dict[str, any], args: dict) -> SPSFGenerator | SDeconvFilter:
         """Get the instance of the module
 
-        Returns
-        -------
-        Object: instance of the SDeep module
-
+        :param metadata: Metadata of the module
+        :param args: Argument to pass for the module instantiation
+        :return: Instance of the module
         """
         # check the args
         instance_args = {}
@@ -90,7 +76,14 @@ class SDeconvModuleBuilder:
             instance_args[key] = val
         return metadata['class'](**instance_args)
 
-    def _get_arg(self, param_metadata, key, args):
+    def _get_arg(self, param_metadata: dict[str, any], key: str, args: dict[str, any]) -> any:
+        """Retrieve the value of a parameter with a type check
+        
+        :param param_metadata: Metadata of the parameter,
+        :param key: Name of the parameter,
+        :param args: Value of the parameters
+        :return: The value of the parameter if check is successful
+        """
         type_ = param_metadata['type']
         range_ = None
         if 'range' in param_metadata:
@@ -116,16 +109,12 @@ class SDeconvModuleBuilder:
         return arg_value
 
     @staticmethod
-    def _error_message(key, value_type, value_range):
+    def _error_message(key: str, value_type: str, value_range: tuple | None):
         """Throw an exception if an input parameter is not correct
-        Parameters
-        ----------
-        key: str
-            Input parameter key
-        value_type: str
-            String naming the input type (int, float...)
-        value_range: tuple or None
-            Min and max values of the parameter
+        
+        :param key: Input parameter key
+        :param value_type: String naming the input type (int, float...)
+        :param value_range: Min and max values of the parameter
         """
         range_message = ''
         if value_range and len(value_range) == 2:
@@ -134,20 +123,22 @@ class SDeconvModuleBuilder:
         message = f'Parameter {key} must be of type `{value_type}` {range_message}'
         return message
 
-    def get_arg_int(self, args, key, default_value, value_range=None):
+    def get_arg_int(self, 
+                    args: dict[str, any], 
+                    key: str, 
+                    default_value: int, 
+                    value_range: tuple = None
+                    ) -> int:
         """Get the value of a parameter from the args list
+        
         The default value of the parameter is returned if the
         key is not in args
-        Parameters
-        ----------
-        args: dict
-            Dictionary of the input args
-        key: str
-            Name of the parameters
-        default_value: int
-            Default value of the parameter
-        value_range: tuple
-            Min and max value of the parameter
+        
+        :param args: Dictionary of the input args
+        :param key: Name of the parameters
+        :param default_value: Default value of the parameter
+        :param value_range: Min and max value of the parameter
+        :return: The arg value
         """
         value = default_value
         if isinstance(args, dict) and key in args:
@@ -162,20 +153,22 @@ class SDeconvModuleBuilder:
                 raise SDeconvFactoryError(self._error_message(key, 'int', value_range))
         return value
 
-    def get_arg_float(self, args, key, default_value, value_range=None):
+    def get_arg_float(self, 
+                      args: dict[str, any], 
+                      key: str, 
+                      default_value: float, 
+                      value_range: tuple = None
+                      ) -> str:
         """Get the value of a parameter from the args list
+        
         The default value of the parameter is returned if the
         key is not in args
-        Parameters
-        ----------
-        args: dict
-            Dictionary of the input args
-        key: str
-            Name of the parameters
-        default_value: float
-            Default value of the parameter
-        value_range: tuple
-            Min and max value of the parameter
+        
+        :param args: Dictionary of the input args
+        :param key: Name of the parameters
+        :param default_value: Default value of the parameter
+        :param value_range: Min and max value of the parameter
+        :return: The arg value
         """
         value = default_value
         if isinstance(args, dict) and key in args:
@@ -190,20 +183,22 @@ class SDeconvModuleBuilder:
                 raise SDeconvFactoryError(self._error_message(key, 'float', value_range))
         return value
 
-    def get_arg_str(self, args, key, default_value, value_range=None):
+    def get_arg_str(self, 
+                    args: dict[str, any], 
+                    key: str, 
+                    default_value: str, 
+                    value_range: tuple = None
+                    ) -> str:
         """Get the value of a parameter from the args list
+        
         The default value of the parameter is returned if the
         key is not in args
-        Parameters
-        ----------
-        args: dict
-            Dictionary of the input args
-        key: str
-            Name of the parameters
-        default_value: str
-            Default value of the parameter
-        value_range: tuple
-            Min and max value of the parameter
+        
+        :param args: Dictionary of the input args
+        :param key: Name of the parameters
+        :param default_value: Default value of the parameter
+        :param value_range: Min and max value of the parameter
+        :return: The arg value
         """
         value = default_value
         if isinstance(args, dict) and key in args:
@@ -219,23 +214,30 @@ class SDeconvModuleBuilder:
         return value
 
     @staticmethod
-    def _str2bool(value):
+    def _str2bool(value: str) -> bool:
+        """Convert a string to a boolean
+        
+        :param value: String to convert
+        :return: The boolean conversion
+        """
         return value.lower() in ("yes", "true", "t", "1")
 
-    def get_arg_bool(self, args, key, default_value, value_range=None):
+    def get_arg_bool(self, 
+                     args: dict[str, any], 
+                     key: str, 
+                     default_value: bool, 
+                     value_range: tuple = None
+                     ) -> bool:
         """Get the value of a parameter from the args list
+        
         The default value of the parameter is returned if the
         key is not in args
-        Parameters
-        ----------
-        args: dict
-            Dictionary of the input args
-        key: str
-            Name of the parameters
-        default_value: bool
-            Default value of the parameter
-        value_range: tuple
-            Min and max value of the parameter
+        
+        :param args: Dictionary of the input args
+        :param key: Name of the parameters
+        :param default_value: Default value of the parameter
+        :param value_range: Min and max value of the parameter
+        :return: The arg value
         """
         value = default_value
         # cast
@@ -252,21 +254,20 @@ class SDeconvModuleBuilder:
                 raise SDeconvFactoryError(self._error_message(key, 'bool', value_range))
         return value
 
-    def get_arg_array(self, args, key, default_value):
+    def get_arg_array(self, 
+                      args: dict[str, any], 
+                      key: str, 
+                      default_value: torch.Tensor
+                      ) -> torch.Tensor:
         """Get the value of a parameter from the args list
 
         The default value of the parameter is returned if the
         key is not in args
 
-        Parameters
-        ----------
-        args: dict
-            Dictionary of the input args
-        key: str
-            Name of the parameters
-        default_value: np.array
-            Default value of the parameter
-
+        :param args: Dictionary of the input args
+        :param key: Name of the parameters
+        :param default_value: Default value of the parameter
+        :return: The arg value
         """
         value = default_value
         if isinstance(args, dict) and key in args:
@@ -278,21 +279,20 @@ class SDeconvModuleBuilder:
                 raise SDeconvFactoryError(self._error_message(key, 'array', None))
         return value
 
-    def get_arg_list(self, args, key, default_value):
+    def get_arg_list(self, 
+                     args: dict[str, any], 
+                     key: str, 
+                     default_value: list
+                     ) -> list:
         """Get the value of a parameter from the args list
 
         The default value of the parameter is returned if the
         key is not in args
 
-        Parameters
-        ----------
-        args: dict
-            Dictionary of the input args
-        key: str
-            Name of the parameters
-        default_value: np.array
-            Default value of the parameter
-
+        :param args: Dictionary of the input args
+        :param key: Name of the parameters
+        :param default_value: Default value of the parameter
+        :return: The arg value
         """
         value = default_value
         if isinstance(args, dict) and key in args:
@@ -302,18 +302,17 @@ class SDeconvModuleBuilder:
                 raise SDeconvFactoryError(self._error_message(key, 'list', None))
         return value
 
-    def get_arg_select(self, args, key, values):
+    def get_arg_select(self, 
+                       args: dict[str, any], 
+                       key: str, 
+                       values: list
+                       ) -> str:
         """Get the value of a parameter from the args list as a select input
 
-        Parameters
-        ----------
-        args: dict
-            Dictionary of the input args
-        key: str
-            Name of the parameters
-        values: list
-            Possible values in select input
-
+        :param args: Dictionary of the input args
+        :param key: Name of the parameters
+        :param values: Possible values in select input
+        :return: The arg value
         """
         if isinstance(args, dict) and key in args:
             value = str(args[key])

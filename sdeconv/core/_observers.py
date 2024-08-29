@@ -1,41 +1,48 @@
-"""Module that implements the observer/observable design pattern to display progress
+"""Module that implements the observer/observable design pattern to display progress"""
+from abc import ABC, abstractmethod
 
-Classes
--------
-SObservable
-SObserver
 
-"""
+class SObserver(ABC):
+    """Interface of observer to notify progress
 
+    An observer must implement the progress and message
+    """
+    @abstractmethod
+    def notify(self, message: str):
+        """Notify a progress message
+
+        :param message: Progress message
+        """
+        raise NotImplementedError('SObserver is abstract')
+
+    @abstractmethod
+    def progress(self, value: int):
+        """Notify progress value
+
+        :param value: Progress value in [0, 100]
+        """
+        raise NotImplementedError('SObserver is abstract')
+    
 
 class SObservable:
     """Interface for data processing class
 
     The observable class can notify the observers for progress
-
     """
     def __init__(self):
         self._observers = []
 
-    def add_observer(self, observer):
+    def add_observer(self, observer: SObserver):
         """Add an observer
 
-        Parameters
-        ----------
-        observer: SObserver
-            Observer class
-
+        :param observer: Observer instance to add
         """
         self._observers.append(observer)
 
-    def notify(self, message):
+    def notify(self, message: str):
         """Notify progress to observers
 
-        Parameters
-        ----------
-        message: str
-            Progress message
-
+        :param message: Progress message
         """
         for obs in self._observers:
             obs.notify(message)
@@ -43,53 +50,25 @@ class SObservable:
     def progress(self, value):
         """Notify progress to observers
 
-        Parameters
-        ----------
-        value: int
-            Progress value in [0, 100]
-
+        :param value: Progress value in [0, 100]
         """
         for obs in self._observers:
             obs.progress(value)
 
 
-class SObserver:
-    """Interface of observer to notify progress
-
-    An observer must implement the progress and message
-
-    """
-    def __init__(self):
-        pass
-
-    def notify(self, message):
-        """Notify a progress message
-
-        Parameters
-        ----------
-        message: str
-            Progress message
-
-        """
-        raise Exception('SObserver is abstract')
-
-    def progress(self, value):
-        """Notify progress value
-
-        Parameters
-        ----------
-        value: int
-            Progress value in [0, 100]
-
-        """
-        raise Exception('SObserver is abstract')
-
-
 class SObserverConsole(SObserver):
     """print message and progress to console"""
 
-    def notify(self, message):
+    def notify(self, message: str):
+        """Print message
+
+        :param message: Progress message
+        """
         print(message)
 
-    def progress(self, value):
+    def progress(self, value: str):
+        """Print progress
+
+        :param value: Progress value in [0, 100]
+        """
         print('progress:', value, '%')

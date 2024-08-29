@@ -37,8 +37,12 @@ class SRichardsonLucy(SDeconvFilter):
         kernel[x_start:x_start+psf.shape[0], y_start:y_start+psf.shape[1]] = psf
         return kernel
 
-    def __call__(self, image):
-        """Apply the Richardson-Lucy deconvolution"""
+    def __call__(self, image: torch.Tensor) -> torch.Tensor:
+        """Apply the Richardson-Lucy deconvolution
+        
+        :param image: Blurry image for a single channel time point [(Z) Y X]
+        :return: deblurred image [(Z) Y X]
+        """
         if image.ndim == 2:
             return self._deconv_2d(image)
         if image.ndim == 3:

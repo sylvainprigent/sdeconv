@@ -18,7 +18,6 @@ class SDeconvFilter(SObservable):
 
         :param image: Blurry image for a single channel time point [(Z) Y X]
         :return: deblurred image [(Z) Y X]
-
         """
         raise NotImplementedError('SDeconvFilter is an interface. Please implement the'
                                   ' __call__ method')

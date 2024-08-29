@@ -9,7 +9,6 @@ def resize_psf_2d(image: torch.Tensor, psf: torch.Tensor) -> torch.Tensor:
     :param image: Reference image tensor,
     :param psf: Point Spread Function tensor to resize,
     :return: the psf tensor padded to get the same shape as image
-
     """
     kernel = torch.zeros(image.shape).to(SSettings.instance().device)
     x_start = int(image.shape[0] / 2 - psf.shape[0] / 2) + 1

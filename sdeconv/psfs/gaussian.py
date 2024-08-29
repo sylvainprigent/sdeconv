@@ -21,14 +21,24 @@ class SPSFGaussian(SPSFGenerator):
 
     @staticmethod
     def _normalize_inputs(sigma: tuple[float, float] | tuple[float, float, float],
-                          shape: tuple[int, int, int] | tuple[int, int, int]):
+                          shape: tuple[int, int, int] | tuple[int, int, int]
+                          ) -> tuple:
+        """Remove batch dimention if it exists
+        
+        :param sigma: Width of the PSF
+        :param shape: Shape of the PSF
+        :return: The modified sigma and shape
+        """
         if len(shape) == 3 and shape[0] == 1:
             return sigma[1:], shape[1:]
         return sigma, shape
 
     def __call__(self) -> torch.Tensor:
+        """Calculate the PSF image
+        
+        :return: The PSF image in a Tensor
+        """
         self.sigma, self.shape = SPSFGaussian._normalize_inputs(self.sigma, self.shape)
-        """Calculate the PSF image"""
         if len(self.shape) == 2:
             self.psf_ = torch.zeros((self.shape[0], self.shape[1])).to(SSettings.instance().device)
             x_0 = math.floor(self.shape[0] / 2)
