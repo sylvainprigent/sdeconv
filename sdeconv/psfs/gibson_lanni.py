@@ -183,7 +183,7 @@ def spsf_gibson_lanni(shape: tuple[int, int] | tuple[int, int, int],
                       pZ: float = 0,
                       use_square: bool = False
                       ) -> torch.Tensor:
-    """Generate a Gibson-Lanni PSF
+    """Function to generate a Gibson-Lanni PSF
 
     :param shape: Size of the PSF array in each dimension [(Z), Y, X],
     :param NA: Numerical aperture,

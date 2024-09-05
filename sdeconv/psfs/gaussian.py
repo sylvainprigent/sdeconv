@@ -79,7 +79,7 @@ class SPSFGaussian(SPSFGenerator):
 def spsf_gaussian(sigma: tuple[float, float] | tuple[float, float, float],
                   shape: tuple[int, int] | tuple[int, int, int]
                   ) -> torch.Tensor:
-    """Generate a Gaussian PSF
+    """Function to generate a Gaussian PSF
 
     :param sigma: width of the PSF. [Z, Y, X] in 3D, [Y, X] in 2D,
     :param shape: Shape of the PSF support image. [Z, Y, X] in 3D, [Y, X] in 2D,

@@ -71,7 +71,7 @@ class SPSFLorentz(SPSFGenerator):
 def spsf_lorentz(gamma: tuple[float, float] | tuple[float, float, float],
                  shape: tuple[int, int, int] | tuple[int, int, int]
                  ) -> torch.Tensor:
-    """Generate a Lorentz PSF
+    """Function to generate a Lorentz PSF
 
     :param gamma: Width of the Lorentz in each dimension [(Z), Y, X],
     :param shape: Size of the PSF image in each dimension [(Z), Y, X],

@@ -11,3 +11,6 @@
 __pycache__
 .DS_Store
 _build
+docs/source/generated/
+runs/
+demo_*.*
