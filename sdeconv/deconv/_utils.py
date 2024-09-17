@@ -1,6 +1,22 @@
 """Implementation of shared methods for all multiple deconvolution algorithms"""
+import numpy as np
 import torch
 from sdeconv.core import SSettings
+
+
+def np_to_torch(image: np.ndarray | torch.Tensor) -> torch.Tensor:
+    """Convert a numpy array into a torch tensor
+
+    The array is then loaded on the GPU if available
+    
+    :param image: Image to convert,
+    :return: The converted image
+    """
+    if isinstance(image, np.ndarray):
+        image_ = torch.tensor(image).to(SSettings.instance().device)
+    else:
+        image_ = image
+    return image_
 
 
 def resize_psf_2d(image: torch.Tensor, psf: torch.Tensor) -> torch.Tensor:
@@ -46,7 +62,7 @@ def pad_2d(image: torch.Tensor,
     """
     padding = pad
     if isinstance(pad, tuple) and len(pad) != image.ndim:
-        raise Exception("Padding must be the same dimension as image")
+        raise ValueError("Padding must be the same dimension as image")
     if isinstance(pad, int):
         if pad == 0:
             return image, psf, (0, 0)
@@ -77,7 +93,7 @@ def pad_3d(image: torch.Tensor,
     """
     padding = pad
     if isinstance(pad, tuple) and len(pad) != image.ndim:
-        raise Exception("Padding must be the same dimension as image")
+        raise ValueError("Padding must be the same dimension as image")
     if isinstance(pad, int):
         if pad == 0:
             return image, psf, (0, 0, 0)

@@ -122,7 +122,7 @@ class UNet2D(nn.Module):
     def __init__(self,
                  n_channels_in: int = 1,
                  n_channels_out: int = 1,
-                 n_channels_layers: list[int] = [32, 64, 128],
+                 n_channels_layers: list[int] = (32, 64, 128),
                  use_batch_norm: bool = False):
         super().__init__()
 
@@ -134,7 +134,9 @@ class UNet2D(nn.Module):
             self.encoder.append(UNetEncoderBlock(n_in, n_out, use_batch_norm))
 
         # Bottleneck
-        self.bottleneck = UNetConvBlock(n_channels_layers[-2], n_channels_layers[-1], use_batch_norm)
+        self.bottleneck = UNetConvBlock(n_channels_layers[-2],
+                                        n_channels_layers[-1],
+                                        use_batch_norm)
 
         # Decoder
         self.decoder = nn.ModuleList()
@@ -146,7 +148,7 @@ class UNet2D(nn.Module):
 
         self.outputs = nn.Conv2d(n_channels_layers[0], n_channels_out,
                                  kernel_size=1, padding=0)
-        
+
         self.num_layers = len(n_channels_layers)-1
 
 
@@ -155,7 +157,7 @@ class UNet2D(nn.Module):
 
         :param inputs: input tensor
         :return: the tensor processed by the network
-        """   
+        """
         # Encoder
         skips = []
         p = [None] * (len(self.encoder)+1)

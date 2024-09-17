@@ -14,9 +14,6 @@ from ._unet_2d import UNet2D
 from ._datasets import SelfSupervisedPatchDataset
 from ._datasets import SelfSupervisedDataset
 
-from ._unet_old import UNet
-
-
 def generate_2d_points(shape: tuple[int, int], n_point: int) -> tuple[np.ndarray, np.ndarray]:
     """Generate random 2D coordinates to mask
 
