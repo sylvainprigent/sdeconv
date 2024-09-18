@@ -64,7 +64,7 @@ class SPSFLorentz(SPSFGenerator):
                              torch.pow((zzz - z_0)/(0.5*self.gamma[0]), 2))
             self.psf_ = self.psf_ / torch.sum(self.psf_)
         else:
-            raise Exception('SPSFLorentz: can generate only 2D or 3D PSFs')
+            raise ValueError('SPSFLorentz: can generate only 2D or 3D PSFs')
         return self.psf_
 
 

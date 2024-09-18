@@ -72,7 +72,7 @@ class SPSFGaussian(SPSFGenerator):
 
             self.psf_ = self.psf_ / torch.sum(self.psf_)
         else:
-            raise Exception('PSFGaussian: can generate only 2D or 3D PSFs')
+            raise ValueError('PSFGaussian: can generate only 2D or 3D PSFs')
         return self.psf_
 
 

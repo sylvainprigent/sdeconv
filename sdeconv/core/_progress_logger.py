@@ -1,6 +1,4 @@
 """Set of classes to log a workflow run"""
-from pathlib import Path
-
 COLOR_WARNING = '\033[93m'
 COLOR_ERROR = '\033[91m'
 COLOR_GREEN = '\033[92m'

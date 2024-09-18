@@ -5,7 +5,7 @@ from .richardson_lucy import SRichardsonLucy, srichardsonlucy
 from .spitfire import Spitfire, spitfire
 from .noise2void import Noise2VoidDeconv
 
-__all__ = ['SDeconvFilter', 
+__all__ = ['SDeconvFilter',
            'SWiener',
            'swiener',
            'SRichardsonLucy',

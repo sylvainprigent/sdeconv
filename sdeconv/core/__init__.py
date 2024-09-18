@@ -6,10 +6,10 @@ from ._timing import seconds2str
 from ._progress_logger import SConsoleLogger
 
 
-__all__ = ['SSettings', 
+__all__ = ['SSettings',
            'SSettingsContainer',
-           'SObservable', 
-           'SObserver', 
+           'SObservable',
+           'SObserver',
            'SObserverConsole',
            'seconds2str',
            'SConsoleLogger']

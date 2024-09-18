@@ -22,7 +22,7 @@ class SObserver(ABC):
         :param value: Progress value in [0, 100]
         """
         raise NotImplementedError('SObserver is abstract')
-    
+
 
 class SObservable:
     """Interface for data processing class

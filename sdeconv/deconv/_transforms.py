@@ -14,7 +14,7 @@ class FlipAugmentation:
 
     def __call__(self, image):
         return self.__transform(image)
-    
+
 
 class VisionScale:
     """Scale images in [-1, 1]"""

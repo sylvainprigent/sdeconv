@@ -1,6 +1,7 @@
 """Implementation of Gibson Lanni Point Spread Function model
 
-This implementation is an adaptation of https://kmdouglass.github.io/posts/implementing-a-fast-gibson-lanni-psf-solver-in-python/
+This implementation is an adaptation of 
+https://kmdouglass.github.io/posts/implementing-a-fast-gibson-lanni-psf-solver-in-python/
 
 """
 from math import sqrt
@@ -136,7 +137,7 @@ class SPSFGibsonLanni(SPSFGenerator):
 
         # See equation 5 in Li, Xue, and Blu
         denom = scaling_factor * scaling_factor - b * b
-        R = (scaling_factor * J1(scaling_factor * a) * J0(b * a) * a - b * J0(scaling_factor * a) * J1(b * a) * a)
+        R = scaling_factor * J1(scaling_factor * a) * J0(b * a) * a - b * J0(scaling_factor * a) * J1(b * a) * a
         R /= denom
 
         # The transpose places the axial direction along the first dimension of the array, i.e. rows

@@ -109,28 +109,27 @@ class N2VDeconLoss(torch.nn.Module):
         num = torch.sum((conv_img*mask - target*mask)**2)
         den = torch.sum(mask)
         return num/den
-    
+
 
 class Noise2VoidDeconv(NNModule):
     """Deconvolution using the noise to void algorithm"""
-    def __init__(self):
-        super().__init__()
-
-    def fit(self, 
+    def fit(self,
             train_directory: Path,
             val_directory: Path,
             n_channel_in: int = 1,
-            n_channels_layer: list[int] = [32, 64, 128],
+            n_channels_layer: list[int] = (32, 64, 128),
             patch_size: int = 32,
             n_epoch: int = 25,
-            learning_rate: float = 1e-3, 
+            learning_rate: float = 1e-3,
             out_dir: Path = None,
             psf: torch.Tensor = None
             ):
         """Train a model on a dataset
         
-        :param train_directory: Directory containing the images used for training. One file per image,
-        :param val_directory: Directory containing the images used for validation of the training. One file per image,
+        :param train_directory: Directory containing the images used for 
+                                training. One file per image,
+        :param val_directory: Directory containing the images used for validation of 
+                              the training. One file per image,
         :param psf: Point spread function for deconvolution, 
         :param n_channel_in: Number of channels in the input images
         :param n_channels_layer: Number of channels for each hidden layers of the model,
@@ -142,8 +141,8 @@ class Noise2VoidDeconv(NNModule):
         self._out_dir = out_dir
         self._loss_fn = N2VDeconLoss(psf.to(self.device()))
         self._optimizer = torch.optim.Adam(self._model.parameters(), lr=learning_rate)
-        train_dataset = SelfSupervisedPatchDataset(train_directory, 
-                                                   patch_size=patch_size, 
+        train_dataset = SelfSupervisedPatchDataset(train_directory,
+                                                   patch_size=patch_size,
                                                    stride=int(patch_size/2),
                                                    transform=FlipAugmentation())
         val_dataset = SelfSupervisedDataset(val_directory, transform=VisionScale())
@@ -157,7 +156,7 @@ class Noise2VoidDeconv(NNModule):
                                           shuffle=False,
                                           drop_last=False,
                                           num_workers=0)
-        
+
         self._train_loop(n_epoch)
 
     def _train_step(self):
@@ -171,7 +170,9 @@ class Noise2VoidDeconv(NNModule):
             count_step += 1
 
             masked_x, mask = generate_mask_n2v(x, 0.1)
-            x, masked_x, mask = x.to(self.device()), masked_x.to(self.device()), mask.to(self.device())
+            x, masked_x, mask = (x.to(self.device()),
+                                masked_x.to(self.device()),
+                                mask.to(self.device()))
 
             # Compute prediction error
             prediction = self._model(masked_x)
@@ -198,5 +199,5 @@ class Noise2VoidDeconv(NNModule):
 
         if count_step > 0:
             step_loss /= count_step
-        self.current_loss = step_loss
+        self._current_loss = step_loss
         return {'train_loss': step_loss}

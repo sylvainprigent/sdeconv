@@ -1,6 +1,5 @@
 """Implements the Wiener deconvolution for 2D and 3D images"""
 import torch
-import numpy as np
 from sdeconv.core import SSettings
 from .interface import SDeconvFilter
 from ._utils import pad_2d, pad_3d, unpad_3d, np_to_torch
@@ -73,7 +72,7 @@ class SWiener(SDeconvFilter):
             return self._wiener_2d(image)
         if image.ndim == 3:
             return self._wiener_3d(image)
-        raise Exception('Wiener can only deblur 2D or 3D tensors')
+        raise ValueError('Wiener can only deblur 2D or 3D tensors')
 
     def _wiener_2d(self, image: torch.Tensor) -> torch.Tensor:
         """Compute the 2D wiener deconvolution

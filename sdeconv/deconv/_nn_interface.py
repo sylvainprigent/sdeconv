@@ -1,7 +1,6 @@
 """This module implements interface for deconvolution based on neural network"""
 from abc import abstractmethod
 from pathlib import Path
-from timeit import default_timer as timer
 
 import torch
 from skimage.io import imsave
@@ -29,30 +28,33 @@ class NNModule(torch.nn.Module):
         self._train_data_loader = None
         self._progress = SConsoleLogger()
         self._current_epoch = None
+        self._current_loss = None
 
     @abstractmethod
-    def fit(self, 
+    def fit(self,
             train_directory: Path,
             val_directory: Path,
             n_channel_in: int = 1,
-            n_channels_layer: list[int] = [32, 64, 128],
+            n_channels_layer: list[int] = (32, 64, 128),
             patch_size: int = 32,
             n_epoch: int = 25,
-            learning_rate: float = 1e-3, 
+            learning_rate: float = 1e-3,
             out_dir: Path = None
             ):
         """Train a model on a dataset
         
-        :param train_directory: Directory containing the images used for training. One file per image,
-        :param val_directory: Directory containing the images used for validation of the training. One file per image,
+        :param train_directory: Directory containing the images used for 
+                                training. One file per image,
+        :param val_directory: Directory containing the images used for validation of 
+                              the training. One file per image,
         :param n_channel_in: Number of channels in the input images
         :param n_channels_layer: Number of channels for each hidden layers of the model,
         :param patch_size: Size of square patches used for training the model,
         :param n_epoch: Number of epochs,
         :param learning_rate: Adam optimizer learning rate 
         """
-        raise NotImplemented('NNModule is abstract')
-        
+        raise NotImplementedError('NNModule is abstract')
+
     def _train_loop(self, n_epoch: int):
         """Run the main train loop (should be called in fit)
         
@@ -67,7 +69,7 @@ class NNModule(torch.nn.Module):
     @abstractmethod
     def _train_step(self):
         """Runs one step of training"""
-    
+
     def _after_train_batch(self, data: dict[str, any]):
         """Instructions runs after one batch
 
@@ -84,7 +86,7 @@ class NNModule(torch.nn.Module):
                                data['total_batch'],
                                prefix=prefix,
                                suffix=suffix)
-        
+
     def _after_train_step(self, data: dict):
         """Instructions runs after one train step.
 
@@ -94,7 +96,7 @@ class NNModule(torch.nn.Module):
         """
         if self._save_all:
             self.save(Path(self._out_dir, f'model_{self._current_epoch}.ml'))
-            
+
     def _after_train(self):
         """Instructions runs after the train."""
         # create the output dir
@@ -112,10 +114,10 @@ class NNModule(torch.nn.Module):
                 imsave(predictions_dir / f'{name}.tif',
                        prediction[i, ...].cpu().numpy())
 
-    def _init_model(self, 
-                     n_channel_in: int = 1, 
-                     n_channel_out: int = 1, 
-                     n_channels_layer: list[int] = [32, 64, 128]
+    def _init_model(self,
+                     n_channel_in: int = 1,
+                     n_channel_out: int = 1,
+                     n_channels_layer: list[int] = (32, 64, 128)
                      ):
         """Initialize the model
         
@@ -170,7 +172,8 @@ class NNModule(torch.nn.Module):
         if image.ndim == 2:
             image = image.view(1, 1, *image.shape)
         elif image.ndim > 2:
-            raise ValueError("The current implementation of neural network deconvolution works only with 2D images")
+            raise ValueError("The current implementation of neural network "
+                             "deconvolution works only with 2D images")
 
         self._model.eval()
         scaler = VisionScale()

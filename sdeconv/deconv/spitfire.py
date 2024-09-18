@@ -1,7 +1,7 @@
 """Implements the Spitfire deconvolution algorithms for 2D and 3D images"""
 import torch
-import numpy as np
-from sdeconv.core import SSettings
+
+from ..core import SSettings
 from .interface import SDeconvFilter
 from ._utils import pad_2d, pad_3d, unpad_3d, np_to_torch
 
@@ -79,7 +79,22 @@ class DataTermDeconv3D(torch.autograd.Function):
     This class manually implement the 3D data term backward
     """
     @staticmethod
-    def forward(ctx, deblurred_image, blurry_image, fft_blurry_image, fft_psf, adjoint_otf):
+    def forward(ctx,
+                deblurred_image: torch.Tensor,
+                blurry_image: torch.Tensor,
+                fft_blurry_image: torch.Tensor,
+                fft_psf: torch.Tensor,
+                adjoint_otf: torch.Tensor
+                ) -> torch.Tensor:
+        """Pytorch forward method
+        
+        :param deblurred_image: Candidate deblurred image
+        :param blurry_image: Original image
+        :param fft_blurry_image: FFT of the original image
+        :param fft_psf: FFT of the Point Spread Function
+        :param adjoint_otf: Fourier adjoint of PSF
+        :return: The loss value
+        """
         fft_deblurred_image = torch.fft.fftn(deblurred_image)
         ctx.save_for_backward(deblurred_image, fft_deblurred_image, fft_blurry_image, fft_psf,
                               adjoint_otf)
@@ -90,6 +105,7 @@ class DataTermDeconv3D(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, grad_output):
+        """Pytorch backward method"""
         deblurred_image, fft_deblurred_image, fft_blurry_image, \
         fft_psf, adjoint_otf = ctx.saved_tensors
 
@@ -115,7 +131,8 @@ class Spitfire(SDeconvFilter):
     :param delta: For 3D images resolution delta between xy and z
     :param reg: Regularization weight. Value is in [0, 1]
     :param gradient_step: Gradient descent step
-    :param precision: Stop criterion. Stop gradient descent when the loss decrease less than precision
+    :param precision: Stop criterion. Stop gradient descent when the 
+                      loss decrease less than precision
     :param pad: Image padding to avoid Fourier artefacts
     """
     def __init__(self,
@@ -127,7 +144,7 @@ class Spitfire(SDeconvFilter):
                  precision: float = 1e-7,
                  pad: int | tuple[int, int] | tuple[int, int, int] = 0):
         super().__init__()
-        self.psf = psf
+        self.psf = psf.to(SSettings.instance().device)
         self.weight = weight
         self.reg = reg
         self.precision = precision
@@ -148,7 +165,7 @@ class Spitfire(SDeconvFilter):
             return self.run_2d(image)
         if image.ndim == 3:
             return self.run_3d(image)
-        raise Exception("Spitfire can process only 2D or 3D tensors")
+        raise ValueError("Spitfire can process only 2D or 3D tensors")
 
     def run_2d(self, image: torch.Tensor) -> torch.Tensor:
         """Implements Spitfire for 2D images

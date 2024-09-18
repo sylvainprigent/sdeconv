@@ -52,22 +52,20 @@ class DeconSpitfireLoss(torch.nn.Module):
         """
         conv_img = self.__conv_op(input_image)
         mse = torch.nn.MSELoss()
-        return self.regularization*mse(target, conv_img) + (1-self.regularization)*hv_loss(input_image, weighting=self.weighting)
+        return self.regularization*mse(target, conv_img) + \
+                   (1-self.regularization)*hv_loss(input_image, weighting=self.weighting)
 
 
 class SelfSupervisedNNDeconv(NNModule):
     """Deconvolution using the noise to void algorithm"""
-    def __init__(self):
-        super().__init__()
-
-    def fit(self, 
+    def fit(self,
             train_directory: Path,
             val_directory: Path,
             n_channel_in: int = 1,
-            n_channels_layer: list[int] = [32, 64, 128],
+            n_channels_layer: list[int] = (32, 64, 128),
             patch_size: int = 32,
             n_epoch: int = 25,
-            learning_rate: float = 1e-3, 
+            learning_rate: float = 1e-3,
             out_dir: Path = None,
             weight: float = 0.9,
             reg: float = 0.95,
@@ -75,8 +73,10 @@ class SelfSupervisedNNDeconv(NNModule):
             ):
         """Train a model on a dataset
         
-        :param train_directory: Directory containing the images used for training. One file per image,
-        :param val_directory: Directory containing the images used for validation of the training. One file per image,
+        :param train_directory: Directory containing the images used 
+                                for training. One file per image,
+        :param val_directory: Directory containing the images used for validation of 
+                              the training. One file per image,
         :param psf: Point spread function for deconvolution, 
         :param n_channel_in: Number of channels in the input images
         :param n_channels_layer: Number of channels for each hidden layers of the model,
@@ -88,7 +88,9 @@ class SelfSupervisedNNDeconv(NNModule):
         self._out_dir = out_dir
         self._loss_fn = DeconSpitfireLoss(psf.to(self.device()), reg, weight)
         self._optimizer = torch.optim.Adam(self._model.parameters(), lr=learning_rate)
-        train_dataset = SelfSupervisedPatchDataset(train_directory, patch_size=patch_size, stride=int(patch_size/2))
+        train_dataset = SelfSupervisedPatchDataset(train_directory,
+                                                   patch_size=patch_size,
+                                                   stride=int(patch_size/2))
         val_dataset = SelfSupervisedDataset(val_directory)
         self._train_data_loader = DataLoader(train_dataset,
                                              batch_size=300,
