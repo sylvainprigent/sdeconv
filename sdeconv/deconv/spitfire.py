@@ -3,7 +3,7 @@ import torch
 import numpy as np
 from sdeconv.core import SSettings
 from .interface import SDeconvFilter
-from ._utils import pad_2d, pad_3d, unpad_3d, psf_parameter
+from ._utils import pad_2d, pad_3d, unpad_3d, np_to_torch
 
 
 def hv_loss(img: torch.Tensor, weighting: float = 0.5) -> torch.Tensor:
@@ -317,16 +317,11 @@ def spitfire(image: torch.Tensor,
     if observers is None:
         observers = []
 
-    if isinstance(image, np.ndarray):
-        psf_ = torch.tensor(psf).to(SSettings.instance().device)
-    else:
-        psf_ = psf
+    psf_ = np_to_torch(psf)
     filter_ = Spitfire(psf_, weight, delta, reg, gradient_step, precision, pad)
     for observer in observers:
         filter_.add_observer(observer)
-    if isinstance(image, np.ndarray):
-        return filter_(torch.tensor(image).to(SSettings.instance().device))
-    return filter_(image)
+    return filter_(np_to_torch(image))
 
 
 metadata = {

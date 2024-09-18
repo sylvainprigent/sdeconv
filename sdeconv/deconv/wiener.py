@@ -3,7 +3,7 @@ import torch
 import numpy as np
 from sdeconv.core import SSettings
 from .interface import SDeconvFilter
-from ._utils import pad_2d, pad_3d, unpad_3d, psf_parameter
+from ._utils import pad_2d, pad_3d, unpad_3d, np_to_torch
 
 
 def laplacian_2d(shape: tuple[int, int]) -> torch.Tensor:
@@ -131,14 +131,9 @@ def swiener(image: torch.Tensor,
     :param pad: Padding in each dimension,
     :return: the deblurred image
     """
-    if isinstance(image, np.ndarray):
-        psf_ = torch.tensor(psf).to(SSettings.instance().device)
-    else:
-        psf_ = psf
+    psf_ = np_to_torch(psf)
     filter_ = SWiener(psf_, beta, pad)
-    if isinstance(image, np.ndarray):
-        return filter_(torch.tensor(image).to(SSettings.instance().device))
-    return filter_(image)
+    return filter_(np_to_torch(image))
 
 
 metadata = {

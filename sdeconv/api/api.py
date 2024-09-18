@@ -81,17 +81,18 @@ class SDeconvAPI:
         generator = self.psf(method_name, **kwargs)
         return generator()
 
-    def deconvolve(self, 
-                   image: torch.Tensor, 
-                   method_name: str, 
-                   plane_by_plane: bool, 
+    def deconvolve(self,
+                   image: torch.Tensor,
+                   method_name: str,
+                   plane_by_plane: bool,
                    **kwargs
                    ) -> torch.Tensor:
         """Run the deconvolution on an image
 
         :param image: Image to deconvolve. Can be 2D to 5D
         :param method_name: Name of the deconvolution method to use
-        :param plane_by_plane: True to process the image plane by plane when dimension is more than 2
+        :param plane_by_plane: True to process the image plane by plane 
+                               when dimension is more than 2
         :param kwargs: Parameters of the deconvolution method
         :return: The deblurred image
         """
@@ -171,8 +172,8 @@ class SDeconvAPI:
         return out_image
 
     @staticmethod
-    def _deconv_dims(image: torch.Tensor, 
-                     filter_: SDeconvFilter, 
+    def _deconv_dims(image: torch.Tensor,
+                     filter_: SDeconvFilter,
                      plane_by_plane: bool = False):
         """Call the deconvolution method depending on the image dimension
 

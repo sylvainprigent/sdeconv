@@ -1,9 +1,8 @@
 """Implementation of Richardson-Lucy deconvolution for 2D and 3D images"""
 import torch
 import numpy as np
-from sdeconv.core import SSettings
 from .interface import SDeconvFilter
-from ._utils import pad_2d, pad_3d
+from ._utils import pad_2d, pad_3d, np_to_torch
 
 
 class SRichardsonLucy(SDeconvFilter):
@@ -47,7 +46,7 @@ class SRichardsonLucy(SDeconvFilter):
             return self._deconv_2d(image)
         if image.ndim == 3:
             return self._deconv_3d(image)
-        raise Exception('Richardson-Lucy can only deblur 2D or 3D tensors')
+        raise ValueError('Richardson-Lucy can only deblur 2D or 3D tensors')
 
     def _deconv_2d(self, image: torch.Tensor) -> torch.Tensor:
         """Implements Richardson-Lucy for 2D images
@@ -123,13 +122,11 @@ def srichardsonlucy(image: torch.Tensor,
     :param pad: image padding size
     :return: the deblurred image
     """
-    if isinstance(image, np.ndarray):
-        psf_ = torch.tensor(psf).to(SSettings.instance().device)
-    else:
-        psf_ = psf
+    psf_ = np_to_torch(psf)
+    image_ = np_to_torch(image)
     filter_ = SRichardsonLucy(psf_, niter, pad)
     if isinstance(image, np.ndarray):
-        return filter_(torch.tensor(image).to(SSettings.instance().device))
+        return filter_(image_)
     return filter_(image)
 
 

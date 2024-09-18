@@ -123,10 +123,10 @@ class SDeconvModuleBuilder:
         message = f'Parameter {key} must be of type `{value_type}` {range_message}'
         return message
 
-    def get_arg_int(self, 
-                    args: dict[str, any], 
-                    key: str, 
-                    default_value: int, 
+    def get_arg_int(self,
+                    args: dict[str, any],
+                    key: str,
+                    default_value: int,
                     value_range: tuple = None
                     ) -> int:
         """Get the value of a parameter from the args list
@@ -153,10 +153,10 @@ class SDeconvModuleBuilder:
                 raise SDeconvFactoryError(self._error_message(key, 'int', value_range))
         return value
 
-    def get_arg_float(self, 
-                      args: dict[str, any], 
-                      key: str, 
-                      default_value: float, 
+    def get_arg_float(self,
+                      args: dict[str, any],
+                      key: str,
+                      default_value: float,
                       value_range: tuple = None
                       ) -> str:
         """Get the value of a parameter from the args list
@@ -183,10 +183,10 @@ class SDeconvModuleBuilder:
                 raise SDeconvFactoryError(self._error_message(key, 'float', value_range))
         return value
 
-    def get_arg_str(self, 
-                    args: dict[str, any], 
-                    key: str, 
-                    default_value: str, 
+    def get_arg_str(self,
+                    args: dict[str, any],
+                    key: str,
+                    default_value: str,
                     value_range: tuple = None
                     ) -> str:
         """Get the value of a parameter from the args list
@@ -222,10 +222,10 @@ class SDeconvModuleBuilder:
         """
         return value.lower() in ("yes", "true", "t", "1")
 
-    def get_arg_bool(self, 
-                     args: dict[str, any], 
-                     key: str, 
-                     default_value: bool, 
+    def get_arg_bool(self,
+                     args: dict[str, any],
+                     key: str,
+                     default_value: bool,
                      value_range: tuple = None
                      ) -> bool:
         """Get the value of a parameter from the args list
@@ -254,9 +254,9 @@ class SDeconvModuleBuilder:
                 raise SDeconvFactoryError(self._error_message(key, 'bool', value_range))
         return value
 
-    def get_arg_array(self, 
-                      args: dict[str, any], 
-                      key: str, 
+    def get_arg_array(self,
+                      args: dict[str, any],
+                      key: str,
                       default_value: torch.Tensor
                       ) -> torch.Tensor:
         """Get the value of a parameter from the args list
@@ -279,9 +279,9 @@ class SDeconvModuleBuilder:
                 raise SDeconvFactoryError(self._error_message(key, 'array', None))
         return value
 
-    def get_arg_list(self, 
-                     args: dict[str, any], 
-                     key: str, 
+    def get_arg_list(self,
+                     args: dict[str, any],
+                     key: str,
                      default_value: list
                      ) -> list:
         """Get the value of a parameter from the args list
@@ -296,15 +296,15 @@ class SDeconvModuleBuilder:
         """
         value = default_value
         if isinstance(args, dict) and key in args:
-            if isinstance(args[key], list) or isinstance(args[key], tuple):
+            if isinstance(args[key], (list, tuple)):
                 value = args[key]
             else:
                 raise SDeconvFactoryError(self._error_message(key, 'list', None))
         return value
 
-    def get_arg_select(self, 
-                       args: dict[str, any], 
-                       key: str, 
+    def get_arg_select(self,
+                       args: dict[str, any],
+                       key: str,
                        values: list
                        ) -> str:
         """Get the value of a parameter from the args list as a select input
