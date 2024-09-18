@@ -1,10 +1,16 @@
 """Module that implements the image deconvolution algorithms"""
 from .interface import SDeconvFilter
-from .wiener import SWiener
-from .richardson_lucy import SRichardsonLucy
-from .spitfire import Spitfire
+from .wiener import SWiener, swiener
+from .richardson_lucy import SRichardsonLucy, srichardsonlucy
+from .spitfire import Spitfire, spitfire
+from .noise2void import Noise2VoidDeconv
 
 __all__ = ['SDeconvFilter', 
            'SWiener',
+           'swiener',
            'SRichardsonLucy',
-           'Spitfire']
+           'srichardsonlucy',
+           'Spitfire',
+           'spitfire',
+           'Noise2VoidDeconv'
+        ]

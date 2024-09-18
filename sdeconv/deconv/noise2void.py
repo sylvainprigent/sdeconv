@@ -6,15 +6,10 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 
-from skimage.io import imsave
-
-from ..core import seconds2str
-from ..core import SConsoleLogger
-from ._unet_2d import UNet2D
+from ._nn_interface import NNModule
 from ._datasets import SelfSupervisedPatchDataset
 from ._datasets import SelfSupervisedDataset
-
-from ._unet_old import UNet
+from ._transforms import FlipAugmentation, VisionScale
 
 
 def generate_2d_points(shape: tuple[int, int], n_point: int) -> tuple[np.ndarray, np.ndarray]:
@@ -116,30 +111,21 @@ class N2VDeconLoss(torch.nn.Module):
         return num/den
     
 
-class Noise2VoidDeconv(torch.nn.Module):
+class Noise2VoidDeconv(NNModule):
     """Deconvolution using the noise to void algorithm"""
     def __init__(self):
         super().__init__()
 
-        self.__model_args = None
-        self.__model = None
-        self.loss_fn = None
-        self.optimizer = None
-        self.save_all = True
-        self.__device = None
-        self.out_dir = None
-        self.progress = SConsoleLogger()
-
     def fit(self, 
             train_directory: Path,
             val_directory: Path,
-            psf: torch.Tensor, 
             n_channel_in: int = 1,
             n_channels_layer: list[int] = [32, 64, 128],
             patch_size: int = 32,
             n_epoch: int = 25,
             learning_rate: float = 1e-3, 
-            out_dir: Path = None
+            out_dir: Path = None,
+            psf: torch.Tensor = None
             ):
         """Train a model on a dataset
         
@@ -152,51 +138,50 @@ class Noise2VoidDeconv(torch.nn.Module):
         :param n_epoch: Number of epochs,
         :param learning_rate: Adam optimizer learning rate 
         """
-        self.__init_model(n_channel_in, n_channel_in, n_channels_layer)
-        self.out_dir = out_dir
-        self.loss_fn = N2VDeconLoss(psf.to(self.device()))
-        self.optimizer = torch.optim.Adam(self.__model.parameters(), lr=learning_rate)
-        train_dataset = SelfSupervisedPatchDataset(train_directory, patch_size=patch_size, stride=int(patch_size/2))
-        val_dataset = SelfSupervisedDataset(val_directory)
-        self.train_data_loader = DataLoader(train_dataset,
+        self._init_model(n_channel_in, n_channel_in, n_channels_layer)
+        self._out_dir = out_dir
+        self._loss_fn = N2VDeconLoss(psf.to(self.device()))
+        self._optimizer = torch.optim.Adam(self._model.parameters(), lr=learning_rate)
+        train_dataset = SelfSupervisedPatchDataset(train_directory, 
+                                                   patch_size=patch_size, 
+                                                   stride=int(patch_size/2),
+                                                   transform=FlipAugmentation())
+        val_dataset = SelfSupervisedDataset(val_directory, transform=VisionScale())
+        self._train_data_loader = DataLoader(train_dataset,
                                             batch_size=300,
                                             shuffle=True,
                                             drop_last=True,
                                             num_workers=0)
-        self.val_data_loader = DataLoader(val_dataset,
+        self._val_data_loader = DataLoader(val_dataset,
                                           batch_size=1,
                                           shuffle=False,
                                           drop_last=False,
                                           num_workers=0)
         
-        for epoch in range(n_epoch):
-            self.current_epoch = epoch
-            train_data = self.__train_step()
-            self.__after_train_step(train_data)
-        self.__after_train()
+        self._train_loop(n_epoch)
 
-    def __train_step(self):
+    def _train_step(self):
         """Runs one step of training"""
-        size = len(self.train_data_loader.dataset)
-        self.__model.train()
+        size = len(self._train_data_loader.dataset)
+        self._model.train()
         step_loss = 0
         count_step = 0
         tic = timer()
-        for batch, (x, _) in enumerate(self.train_data_loader):
+        for batch, (x, _) in enumerate(self._train_data_loader):
             count_step += 1
 
             masked_x, mask = generate_mask_n2v(x, 0.1)
             x, masked_x, mask = x.to(self.device()), masked_x.to(self.device()), mask.to(self.device())
 
             # Compute prediction error
-            prediction = self.__model(masked_x)
-            loss = self.loss_fn(prediction, x, mask)
+            prediction = self._model(masked_x)
+            loss = self._loss_fn(prediction, x, mask)
             step_loss += loss
 
             # Backpropagation
-            self.optimizer.zero_grad()
+            self._optimizer.zero_grad()
             loss.backward()
-            self.optimizer.step()
+            self._optimizer.step()
 
             # count time
             toc = timer()
@@ -204,7 +189,7 @@ class Noise2VoidDeconv(torch.nn.Module):
             total_batch = int(size / len(x))
             remains = full_time * (total_batch - (batch+1)) / (batch+1)
 
-            self.__after_train_batch({'loss': loss,
+            self._after_train_batch({'loss': loss,
                                     'id_batch': batch+1,
                                     'total_batch': total_batch,
                                     'remain_time': int(remains+0.5),
@@ -215,109 +200,3 @@ class Noise2VoidDeconv(torch.nn.Module):
             step_loss /= count_step
         self.current_loss = step_loss
         return {'train_loss': step_loss}
-    
-    def __after_train_batch(self, data: dict[str, any]):
-        """Instructions runs after one batch
-
-        :param data: Dictionary of metadata to log or process
-        """
-        prefix = f"Epoch = {self.current_epoch+1:d}"
-        loss_str = f"{data['loss']:.7f}"
-        full_time_str = seconds2str(int(data['full_time']))
-        remains_str = seconds2str(int(data['remain_time']))
-        suffix = str(data['id_batch']) + '/' + str(data['total_batch']) + \
-            '   [' + full_time_str + '<' + remains_str + ', loss=' + \
-            loss_str + ']     '
-        self.progress.progress(data['id_batch'],
-                               data['total_batch'],
-                               prefix=prefix,
-                               suffix=suffix)
-        
-    def __after_train_step(self, data: dict):
-        """Instructions runs after one train step.
-
-        This method can be used to log data or print console messages
-
-        :param data: Dictionary of metadata to log or process
-        """
-        if self.save_all:
-            self.save(Path(self.out_dir, f'model_{self.current_epoch}.ml'))
-            
-    def __after_train(self):
-        """Instructions runs after the train."""
-        # create the output dir
-        predictions_dir = self.out_dir / 'predictions'
-        predictions_dir.mkdir(parents=True, exist_ok=True)
-
-        # predict on all the test set
-        self.__model.eval()
-        for x, names in self.val_data_loader:
-            x = x.to(self.device())
-
-            with torch.no_grad():
-                prediction = self.__model(x)
-            for i, name in enumerate(names):
-                imsave(predictions_dir / f'{name}.tif',
-                       prediction[i, ...].cpu().numpy())
-
-    def __init_model(self, 
-                     n_channel_in: int = 1, 
-                     n_channel_out: int = 1, 
-                     n_channels_layer: list[int] = [32, 64, 128]
-                     ):
-        """Initialize the model
-        
-        :param n_channel_in: Number of channels for the input image
-        :param n_channel_in: Number of channels for the output image
-        :param n_channels_layer: Number of channels for each layers of the UNet
-        """
-        self.__model_args = {
-            "n_channel_in": n_channel_in, 
-            "n_channel_out": n_channel_out, 
-            "n_channels_layer": n_channels_layer
-        }
-        self.__model = UNet2D(n_channel_in, n_channel_out, n_channels_layer, True)
-
-    def device(self) -> str:
-        """Get the GPU if exists
-        
-        :return: The device name (cuda or CPU)
-        """
-        if self.__device is None:
-            return torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        return self.__device
-
-    def load(self, filename: Path):
-        """Load pre-trained model from file
-        
-        :param: Path of the model file
-        """
-        params = torch.load(filename, map_location=torch.device(self.device()))
-        self.__init_model(**params["model_args"])
-        self.__model.load_state_dict(params['model_state_dict'])
-        self.__model.to(self.device())
-
-    def save(self, filename: Path):
-        """Save the model into file
-        
-        :param: Path of the model file
-        """
-        torch.save({
-            'model_args': self.__model_args,
-            'model_state_dict': self.__model.state_dict(),
-        }, filename)
-
-
-    def __call__(self, image: torch.Tensor) -> torch.Tensor:
-        """Apply the model on a image or batch of image
-        
-        :param image: Blurry image for a single channel or batch [(B) Y X]
-        :return: deblurred image [(B) Y X]
-        """
-        if image.ndim == 2:
-            image = image.view(1, *image.shape)
-        if image.ndim > 2:
-            raise ValueError("The current implementation of Noise2VoidDeconv takes only on 2D images")
-
-        with torch.no_grad():
-            return self.__model()

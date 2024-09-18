@@ -174,13 +174,14 @@ class Spitfire(SDeconvFilter):
         count_eq = 0
         self.niter_ = 0
         loss = 0
+
         for i in range(self.max_iter_):
             self.progress(int(100*i/self.max_iter_))
             self.niter_ += 1
             optimizer.zero_grad()
             loss = self.reg * dataterm_deconv(image_pad, deconv_image, psf_pad) + \
                 (1-self.reg) * hv_loss(deconv_image, self.weight)
-            print('iter:', self.niter_, ' loss:', loss.item())
+            #print('iter:', self.niter_, ' loss:', loss.item())
             if abs(loss - previous_loss) < self.precision:
                 count_eq += 1
             else:
