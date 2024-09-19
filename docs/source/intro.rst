@@ -11,11 +11,10 @@ images depecting endosomes with Lattice LightSheet microscopy, and then ease the
 
 Library components
 ------------------
-SDeconv is written in python3 and uses scipy library for data structures. SDeconv library is organized as a scikit
-library and provides a module for each components of deconvolution algorithms:
+SDeconv is written in python3 with pytorch. SDeconv library provides a module for each components of deconvolution algorithms:
 
-* **psfs**: this module defines the interface to implement a Point Spread Function generator.
-* **deconv**: this module defines the interface to implement a deconvolution algorithm
+* **psfs**: this module defines the interface to implement Point Spread Function generators.
+* **deconv**: this module defines the interfaces to implement a deconvolution algorithm with or without neural networks
 
 Furthermore, the library provides sample data, a command line interface, and a application
 programing interface to ease the integration of the sdeconv deconvolution algorithms into software.

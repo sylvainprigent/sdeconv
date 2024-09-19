@@ -5,7 +5,7 @@ from timeit import default_timer as timer
 import torch
 from torch.utils.data import DataLoader
 
-from ._nn_interface import NNModule
+from .interface_nn import NNModule
 from ._datasets import SelfSupervisedPatchDataset
 from ._datasets import SelfSupervisedDataset
 from .spitfire import hv_loss

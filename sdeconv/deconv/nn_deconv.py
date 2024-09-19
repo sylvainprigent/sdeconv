@@ -6,7 +6,7 @@ import torch
 from torch.utils.data import DataLoader
 from skimage.io import imsave
 
-from ._nn_interface import NNModule
+from .interface_nn import NNModule
 from ._datasets import RestorationDataset
 from ._datasets import RestorationPatchDatasetLoad
 from ._datasets import RestorationPatchDataset

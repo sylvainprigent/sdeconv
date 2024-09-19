@@ -6,7 +6,7 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 
-from ._nn_interface import NNModule
+from .interface_nn import NNModule
 from ._datasets import SelfSupervisedPatchDataset
 from ._datasets import SelfSupervisedDataset
 from ._transforms import FlipAugmentation, VisionScale

@@ -4,6 +4,8 @@ from .wiener import SWiener, swiener
 from .richardson_lucy import SRichardsonLucy, srichardsonlucy
 from .spitfire import Spitfire, spitfire
 from .noise2void import Noise2VoidDeconv
+from .self_supervised_nn import SelfSupervisedNNDeconv
+from .nn_deconv import NNDeconv
 
 __all__ = ['SDeconvFilter',
            'SWiener',
@@ -12,5 +14,7 @@ __all__ = ['SDeconvFilter',
            'srichardsonlucy',
            'Spitfire',
            'spitfire',
-           'Noise2VoidDeconv'
-        ]
+           'Noise2VoidDeconv',
+           'SelfSupervisedNNDeconv',
+           'NNDeconv'
+         ]

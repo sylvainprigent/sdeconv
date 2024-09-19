@@ -7,10 +7,10 @@ of deconvolution. If it is not the case, please refer to the
 
 Input images
 ------------
-Input images are 2D or 3D gray scaled images. 2D images are represented as numpy arrays with the following
-columns ordering ``[Y, X]`` and 3D images are represented with numpy array with ``[Z, Y, X]`` columns ordering
+Input images are 2D or 3D gray scaled images. 2D images are represented as torch tensors with the following
+columns ordering ``[Y, X]`` and 3D images are represented with torch tensors with ``[Z, Y, X]`` columns ordering
 
-First we load the images:
+Sample images can be loaded using the data module:
 
 .. code-block:: python3
 
@@ -21,6 +21,8 @@ First we load the images:
 
 Deconvolution using the API
 ---------------------------
+
+Bellow is an example how to write a deconvolution script with the Wiener deconvolution algorithm:
 
 .. code-block:: python3
 
@@ -60,8 +62,15 @@ Deconvolution using the API
     plt.show()
 
 
+The advantage of using the API is that it implements several strategies to deconvolve a 3D or 3D+t image either plane 
+by plane then frame by frame, or frame by frame in 3D.
+
+
 Deconvolution using the library classes
 ---------------------------------------
+
+When we need only one method, the easiest way may be to call direclty the class that implements the deconvolution 
+algorithm:
 
 .. code-block:: python3
 
@@ -95,3 +104,6 @@ Deconvolution using the library classes
     plt.imshow(out_image.detach().numpy(), cmap='gray')
 
     plt.show()
+
+Please refer to the `Guide <guide>`_ for more details on the interfaces and to the `Modules <modules>`_ documentation to get the 
+list and details of available PSFs and deconvolution methods. 
