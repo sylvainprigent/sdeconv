@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SDeconv’s documentation &#8212; SDeconv 1.0.4 documentation</title>
+    <title>Modules &#8212; SDeconv 1.0.4 documentation</title>
     
   <link href="_static/css/theme.css" rel="stylesheet">
   <link href="_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -34,7 +34,8 @@
     <script src="_static/sphinx-book-theme.9d8b4a8b9bb19db25eeaddc40d639ba2.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Introduction" href="intro.html" />
+    <link rel="next" title="References" href="references.html" />
+    <link rel="prev" title="Quick start" href="quickstart.html" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="docsearch:language" content="None">
     
@@ -59,7 +60,7 @@
 <div class="col-12 col-md-3 bd-sidebar site-navigation " id="site-navigation">
     
         <div class="navbar-brand-box">
-    <a class="navbar-brand text-wrap" href="#">
+    <a class="navbar-brand text-wrap" href="index.html">
       
       
       
@@ -76,7 +77,7 @@
   Contents:
  </span>
 </p>
-<ul class="nav bd-sidenav">
+<ul class="current nav bd-sidenav">
  <li class="toctree-l1">
   <a class="reference internal" href="intro.html">
    Introduction
@@ -92,8 +93,8 @@
    Quick start
   </a>
  </li>
- <li class="toctree-l1">
-  <a class="reference internal" href="modules.html">
+ <li class="toctree-l1 current active">
+  <a class="current reference internal" href="#">
    Modules
   </a>
  </li>
@@ -143,7 +144,7 @@
         <!-- ipynb file if we had a myst markdown file -->
         
         <!-- Download raw file -->
-        <a class="dropdown-buttons" href="_sources/index.rst.txt"><button type="button"
+        <a class="dropdown-buttons" href="_sources/modules.rst.txt"><button type="button"
                 class="btn btn-secondary topbarbtn" title="Download source file" data-toggle="tooltip"
                 data-placement="left">.rst</button></a>
         <!-- Download PDF via print -->
@@ -173,14 +174,19 @@
             </div>
             <nav id="bd-toc-nav" aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
- <li class="toc-h1 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#">
-   SDeconv’s documentation
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#point-spread-functions">
+   Point Spread Functions
   </a>
  </li>
- <li class="toc-h1 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#indices-and-tables">
-   Indices and tables
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#deconvolution-algorithms">
+   Deconvolution algorithms
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#interfaces">
+   Interfaces
   </a>
  </li>
 </ul>
@@ -193,7 +199,7 @@
         <div class="col-12 col-md-9 pl-md-3 pr-md-0">
             <!-- Table of contents that is only displayed when printing the page -->
             <div id="jb-print-docs-body" class="onlyprint">
-                <h1>SDeconv’s documentation</h1>
+                <h1>Modules</h1>
                 <!-- Table of contents -->
                 <div id="print-main-content">
                     <div id="jb-print-toc">
@@ -203,14 +209,19 @@
                         </div>
                         <nav aria-label="Page">
                             <ul class="visible nav section-nav flex-column">
- <li class="toc-h1 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#">
-   SDeconv’s documentation
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#point-spread-functions">
+   Point Spread Functions
   </a>
  </li>
- <li class="toc-h1 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#indices-and-tables">
-   Indices and tables
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#deconvolution-algorithms">
+   Deconvolution algorithms
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#interfaces">
+   Interfaces
   </a>
  </li>
 </ul>
@@ -222,44 +233,52 @@
             
               <div>
                 
-  <div class="section" id="sdeconv-s-documentation">
-<h1>SDeconv’s documentation<a class="headerlink" href="#sdeconv-s-documentation" title="Permalink to this headline">¶</a></h1>
-<div class="toctree-wrapper compound">
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Contents:</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="intro.html">Introduction</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="intro.html#context">Context</a></li>
-<li class="toctree-l2"><a class="reference internal" href="intro.html#library-components">Library components</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="install.html">Install</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="install.html#using-pypi">Using PyPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="install.html#from-source">From source</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick start</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="quickstart.html#input-images">Input images</a></li>
-<li class="toctree-l2"><a class="reference internal" href="quickstart.html#deconvolution-using-the-api">Deconvolution using the API</a></li>
-<li class="toctree-l2"><a class="reference internal" href="quickstart.html#deconvolution-using-the-library-classes">Deconvolution using the library classes</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="modules.html#point-spread-functions">Point Spread Functions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="modules.html#deconvolution-algorithms">Deconvolution algorithms</a></li>
-<li class="toctree-l2"><a class="reference internal" href="modules.html#interfaces">Interfaces</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="references.html">References</a></li>
-</ul>
+  <div class="section" id="modules">
+<h1>Modules<a class="headerlink" href="#modules" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="point-spread-functions">
+<h2>Point Spread Functions<a class="headerlink" href="#point-spread-functions" title="Permalink to this headline">¶</a></h2>
+<table class="autosummary longtable table autosummary">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+</tbody>
+</table>
 </div>
+<div class="section" id="deconvolution-algorithms">
+<h2>Deconvolution algorithms<a class="headerlink" href="#deconvolution-algorithms" title="Permalink to this headline">¶</a></h2>
+<table class="autosummary longtable table autosummary">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+</tbody>
+</table>
 </div>
-<div class="section" id="indices-and-tables">
-<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
-<ul class="simple">
-<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
-<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
-<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
-</ul>
+<div class="section" id="interfaces">
+<h2>Interfaces<a class="headerlink" href="#interfaces" title="Permalink to this headline">¶</a></h2>
+<p>Available interfaces to create a new PSF generator or a new deconvolution algorithm are:</p>
+<table class="colwidths-given table" id="id1">
+<caption><span class="caption-text">Interfaces</span><a class="headerlink" href="#id1" title="Permalink to this table">¶</a></caption>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 75%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">SPSFGenerator</span></code></p></td>
+<td><p>Interface for creating a new PSF generator</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">SDeconvFilter</span></code></p></td>
+<td><p>Interface for creating a deconvolution filter that does not need neural network</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">NNModule</span></code></p></td>
+<td><p>Interface for creating a deconvolution filter using a neural network</p></td>
+</tr>
+</tbody>
+</table>
+</div>
 </div>
 
 
@@ -267,11 +286,18 @@
               
             
                 <!-- Previous / next buttons -->
-<div class='prev-next-area'>
-    <a class='right-next' id="next-link" href="intro.html" title="next page">
+<div class='prev-next-area'> 
+    <a class='left-prev' id="prev-link" href="quickstart.html" title="previous page">
+        <i class="fas fa-angle-left"></i>
+        <div class="prev-next-info">
+            <p class="prev-next-subtitle">previous</p>
+            <p class="prev-next-title">Quick start</p>
+        </div>
+    </a>
+    <a class='right-next' id="next-link" href="references.html" title="next page">
     <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Introduction</p>
+        <p class="prev-next-title">References</p>
     </div>
     <i class="fas fa-angle-right"></i>
     </a>
