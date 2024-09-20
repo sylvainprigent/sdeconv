@@ -65,9 +65,9 @@ def generate_mask_n2v(image: torch.Tensor, ratio: float) -> tuple[torch.Tensor, 
                      (idx_msk_neigh >= img_shape[-1]) * size_window[1])
 
     id_msk = (idy_msk, idx_msk)
-    id_msk_neigh = (idy_msk_neigh, idx_msk_neigh)
+    #id_msk_neigh = (idy_msk_neigh, idx_msk_neigh)
 
-    output[:, :, *id_msk] = image[:, :, *id_msk_neigh]
+    output[:, :, idy_msk, idx_msk] = image[:, :, idy_msk_neigh, idx_msk_neigh]
     mask[id_msk] = 1.0
 
     return output, mask
