@@ -57,7 +57,7 @@ class DeconSpitfireLoss(torch.nn.Module):
 
 
 class SelfSupervisedNNDeconv(NNModule):
-    """Deconvolution using the noise to void algorithm"""
+    """Deconvolution using a neural network trained using the Spitfire loss"""
     def fit(self,
             train_directory: Path,
             val_directory: Path,

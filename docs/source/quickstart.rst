@@ -3,7 +3,7 @@ Quick start
 
 This is a quick start example of how to use the **SDeconv** library. This section supposes you to know the principles
 of deconvolution. If it is not the case, please refer to the
-`Guide <guide>`_.
+:doc:`References <references>`.
 
 Input images
 ------------
@@ -22,7 +22,7 @@ Sample images can be loaded using the data module:
 Deconvolution using the API
 ---------------------------
 
-Bellow is an example how to write a deconvolution script with the Wiener deconvolution algorithm:
+Bellow is an example how to write a deconvolution script with the API. In this example, we run the Wiener deconvolution algorithm:
 
 .. code-block:: python3
 
@@ -30,19 +30,19 @@ Bellow is an example how to write a deconvolution script with the Wiener deconvo
     from sdeconv.api import SDeconvAPI
     import matplotlib.pyplot as plt
 
-    # instantiate the API
+    # Instantiate the API
     api = SDeconvAPI()
 
-    # load image
+    # Load image
     image = data.celegans()
 
     # Generate a PSF
     psf = api.generate_psf('SPSFGaussian', sigma=[1.5, 1.5], shape=[13, 13])
 
-    # deconvolution with API
+    # Deconvolution with API
     image_decon = api.deconvolve(image, "SWiener", plane_by_plane=False, psf=psf, beta=0.005, pad=13)
 
-    # plot the result
+    # Plot the results
     plt.figure()
     plt.subplot(131)
     plt.title('Original')
@@ -79,18 +79,18 @@ algorithm:
     from sdeconv.psfs import SPSFGaussian
     from sdeconv.deconv import SWiener
 
-    # load a 2D sample
+    # Load a 2D sample
     image = celegans()
 
     # Generate a 2D PSF
     psf_generator = SPSFGaussian((1.5, 1.5), (13, 13))
     psf = psf_generator()
 
-    # apply Wiener filter
+    # Apply Wiener filter
     wiener = SWiener(psf, beta=0.005, pad=13)
     out_image = wiener(image)
 
-    # display results
+    # Display results
     plt.figure()
     plt.title('PSF')
     plt.imshow(psf.detach().numpy(), cmap='gray')
@@ -105,5 +105,4 @@ algorithm:
 
     plt.show()
 
-Please refer to the `Guide <guide>`_ for more details on the interfaces and to the `Modules <modules>`_ documentation to get the 
-list and details of available PSFs and deconvolution methods. 
+Please refer to :doc:`Modules <modules>` for more details on the interfaces and the list of available PSFs and deconvolution methods. 

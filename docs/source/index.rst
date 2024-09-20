@@ -1,7 +1,7 @@
 .. SDeconv documentation master file.
 
-Welcome to SDeconv's documentation!
-===================================
+SDeconv's documentation
+=======================
 
 .. toctree::
    :maxdepth: 2
@@ -10,8 +10,8 @@ Welcome to SDeconv's documentation!
    intro
    install
    quickstart
-   guide
    modules
+   references
 
 
 Indices and tables

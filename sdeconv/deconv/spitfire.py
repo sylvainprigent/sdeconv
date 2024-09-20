@@ -124,7 +124,7 @@ class DataTermDeconv3D(torch.autograd.Function):
 
 
 class Spitfire(SDeconvFilter):
-    """Gray scaled image deconvolution with the Spitfire algorithm
+    """Variational deconvolution using the Spitfire algorithm
 
     :param psf: Point spread function
     :param weight: model weight between hessian and sparsity. Value is in  ]0, 1[

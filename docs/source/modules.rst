@@ -41,8 +41,8 @@ Available interfaces to create a new PSF generator or a new deconvolution algori
    :widths: 25 75
 
    * - :class:`SPSFGenerator <sdeconv.psfs.interface.SPSFGenerator>`
-     - Interface to immplement for creating a new PSF generator
+     - Interface for creating a new PSF generator
    * - :class:`SDeconvFilter <sdeconv.deconv.interface.SDeconvFilter>`
-     - Interface to implement for creating a deconvolution filter that does not need neural network
+     - Interface for creating a deconvolution filter that does not need neural network
    * - :class:`NNModule <sdeconv.deconv.interface_nn.NNModule>`
-     - Interface to implement for creating a deconvolution filter using a neural network
+     - Interface for creating a deconvolution filter using a neural network

@@ -14,7 +14,7 @@ from ._transforms import FlipAugmentation, VisionScale
 
 
 class NNDeconv(NNModule):
-    """Deconvolution using the noise to void algorithm"""
+    """Deconvolution using a neural network trained using ground truth"""
     def fit(self,
             train_directory: Path,
             val_directory: Path,
