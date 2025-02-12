@@ -42,7 +42,7 @@ def laplacian_3d(shape: tuple[int, int]) -> torch.Tensor:
     image[z_c, y_c - 1, x_c] = -1
     image[z_c, y_c + 1, x_c] = -1
     image[z_c, y_c, x_c - 1] = -1
-    image[z_c, y_c, x_c - 1] = -1
+    image[z_c, y_c, x_c + 1] = -1
     return image
 
 
